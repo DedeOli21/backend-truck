@@ -1,0 +1,53 @@
+service: backend-truck-api
+frameworkVersion: '3'
+useDotenv: true
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-esbuild
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 15
+  logRetentionInDays: 14
+  environment:
+    NODE_ENV: ${env:NODE_ENV, 'development'}
+    PORT: ${env:PORT, '3000'}
+    JWT_SECRET: ${env:JWT_SECRET, 'change-me'}
+    JWT_REFRESH_SECRET: ${env:JWT_REFRESH_SECRET, 'change-me-refresh'}
+    DATABASE_HOST: ${env:DATABASE_HOST, 'localhost'}
+    DATABASE_PORT: ${env:DATABASE_PORT, '5432'}
+    DATABASE_USER: ${env:DATABASE_USER, 'truck_admin'}
+    DATABASE_PASSWORD: ${env:DATABASE_PASSWORD, 'truck_password'}
+    DATABASE_NAME: ${env:DATABASE_NAME, 'truckdb'}
+    DATABASE_SSL: ${env:DATABASE_SSL, 'false'}
+
+functions:
+  api:
+    handler: src/lambda.handler
+    events:
+      - httpApi: '*'
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    target: node20
+    platform: node
+    concurrency: 10
+    external:
+      - pg-native
+      - '@nestjs/microservices'
+      - '@nestjs/microservices/*'
+      - '@nestjs/websockets'
+      - '@nestjs/websockets/*'
+      - 'class-transformer/storage'
+
+package:
+  individually: false
