@@ -8,6 +8,9 @@ import {
   TruckOrmEntity,
   UserOrmEntity,
   WalletOrmEntity,
+  DriverOrmEntity,
+  DriverReferenceContactOrmEntity,
+  DriverAuditLogOrmEntity,
 } from '@database/typeorm/entities';
 
 
@@ -29,6 +32,9 @@ export default new DataSource({
     TransactionOrmEntity,
     PayableOrmEntity,
     OpenBankingSyncOrmEntity,
+    DriverOrmEntity,
+    DriverReferenceContactOrmEntity,
+    DriverAuditLogOrmEntity,
   ],
   migrations: ['src/database/typeorm/migrations/*.ts', 'dist/database/typeorm/migrations/*.js'],
   synchronize: false,

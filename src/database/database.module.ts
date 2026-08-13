@@ -6,6 +6,9 @@ import { TransactionOrmEntity } from '@database/typeorm/entities/transaction.orm
 import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
 import { UserOrmEntity } from '@database/typeorm/entities/user.orm-entity';
 import { WalletOrmEntity } from '@database/typeorm/entities/wallet.orm-entity';
+import { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
+import { DriverReferenceContactOrmEntity } from '@database/typeorm/entities/driver-reference-contact.orm-entity';
+import { DriverAuditLogOrmEntity } from '@database/typeorm/entities/driver-audit-log.orm-entity';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -28,6 +31,9 @@ const isTest = process.env.NODE_ENV === 'test';
               TransactionOrmEntity,
               PayableOrmEntity,
               OpenBankingSyncOrmEntity,
+              DriverOrmEntity,
+              DriverReferenceContactOrmEntity,
+              DriverAuditLogOrmEntity,
             ],
             synchronize: false,
             ssl:

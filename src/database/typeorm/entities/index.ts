@@ -4,12 +4,19 @@ export { WalletOrmEntity } from '@database/typeorm/entities/wallet.orm-entity';
 export { TransactionOrmEntity } from '@database/typeorm/entities/transaction.orm-entity';
 export { PayableOrmEntity } from '@database/typeorm/entities/payable.orm-entity';
 export { OpenBankingSyncOrmEntity } from '@database/typeorm/entities/open-banking-sync.orm-entity';
+export { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
+export { DriverReferenceContactOrmEntity } from '@database/typeorm/entities/driver-reference-contact.orm-entity';
+export { DriverAuditLogOrmEntity } from '@database/typeorm/entities/driver-audit-log.orm-entity';
 export {
   UserRole,
   TransactionDirection,
   TransactionCategory,
   PayableCategoryDb,
   PayableStatus,
+  DriverStatus,
+  CnhCategory,
+  PixKeyType,
+  DriverAuditAction,
 } from '@database/typeorm/entities/enums';
 
 
