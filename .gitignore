@@ -5,3 +5,4 @@ dist/*
 .claude/settings.json
 .superpowers/
 
+dist/tsconfig.tsbuildinfo

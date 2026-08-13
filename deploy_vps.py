@@ -2,6 +2,7 @@
 import paramiko
 import sys
 import os
+import shutil
 
 HOST = "40.160.82.252"
 USER = "ubuntu"
@@ -34,6 +35,41 @@ for local, remote in files_to_upload:
     # Permissões para shell scripts
     if local.endswith('.sh'):
         sftp.chmod(remote, 0o755)
+
+# Envia código fonte atualizado (src/)
+print("Enviando código fonte src/ para o VPS...")
+local_src = "/home/david/projeto-freela/backend-truck/src"
+remote_src = f"{REMOTE_DIR}/src"
+
+# Remove src remoto antigo
+stdin, stdout, stderr = client.exec_command(f"rm -rf {remote_src}")
+stdout.channel.recv_exit_status()
+
+# Cria diretório remoto
+client.exec_command(f"mkdir -p {remote_src}")
+
+for root, dirs, files in os.walk(local_src):
+    # Ignora node_modules e dist se existirem dentro de src
+    dirs[:] = [d for d in dirs if d not in {'node_modules', 'dist'}]
+    
+    rel_path = os.path.relpath(root, local_src)
+    remote_path = os.path.join(remote_src, rel_path).replace('\\', '/')
+    
+    # Cria diretórios remotos
+    client.exec_command(f"mkdir -p {remote_path}")
+    
+    for file in files:
+        local_file = os.path.join(root, file)
+        remote_file = os.path.join(remote_path, file).replace('\\', '/')
+        sftp.put(local_file, remote_file)
+
+# Envia arquivos de configuração da raiz também
+for config_file in ['package.json', 'package-lock.json', 'tsconfig.json', 'tsconfig.build.json', 'nest-cli.json']:
+    local_config = f"/home/david/projeto-freela/backend-truck/{config_file}"
+    if os.path.exists(local_config):
+        remote_config = f"{REMOTE_DIR}/{config_file}"
+        print(f"Enviando {config_file} -> {remote_config}")
+        sftp.put(local_config, remote_config)
 
 sftp.close()
 
