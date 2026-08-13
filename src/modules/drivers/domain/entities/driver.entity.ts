@@ -22,6 +22,8 @@ export class DriverEntity {
     public status: DriverStatus,
     public readonly createdAt: Date,
     public updatedAt: Date,
+    public userId: string | null = null,
+    public approvedByUserId: string | null = null,
   ) {}
 
   isCnhExpired(): boolean {

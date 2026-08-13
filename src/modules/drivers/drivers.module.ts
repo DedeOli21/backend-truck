@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from '@applications/auth/auth.module';
 import {
   DriverAuditLogOrmEntity,
   DriverOrmEntity,
@@ -22,6 +23,7 @@ const isTest = process.env.NODE_ENV === 'test';
 
 @Module({
   imports: [
+    AuthModule,
     ...(isTest
       ? []
       : [

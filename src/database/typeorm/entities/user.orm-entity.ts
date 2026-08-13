@@ -28,6 +28,9 @@ export class UserOrmEntity {
   @Column({ type: 'enum', enum: UserRole })
   role!: UserRole;
 
+  @Column({ name: 'driver_id', type: 'uuid', nullable: true })
+  driverId!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

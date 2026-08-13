@@ -50,6 +50,62 @@ export class AuthService {
     };
   }
 
+  /**
+   * Cria ou atualiza o usuário de login (role DRIVER) vinculado a um motorista.
+   * - Se já existir um usuário vinculado ao driverId, atualiza e-mail/senha.
+   * - Caso contrário, cria um novo usuário DRIVER.
+   * Lança BadRequestException se o e-mail já estiver em uso por outro usuário.
+   */
+  async upsertDriverCredentials(
+    driverId: string,
+    name: string,
+    email: string,
+    password: string,
+  ) {
+    const normalizedEmail = email.toLowerCase();
+
+    const existingByEmail = await this.usersRepository.findByEmail(normalizedEmail);
+    const existingByDriver = await this.usersRepository.findByDriverId(driverId);
+
+    // Não permite reutilizar e-mail de outro usuário (admin ou outro motorista).
+    if (existingByEmail && existingByEmail.driverId !== driverId) {
+      throw new BadRequestException('Email ja cadastrado');
+    }
+
+    const passwordHash = await hash(password, 10);
+
+    if (existingByDriver) {
+      const updated = await this.usersRepository.updateCredentials(existingByDriver.id, {
+        email: normalizedEmail,
+        passwordHash,
+      });
+      return {
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        role: updated.role,
+        driverId: updated.driverId ?? driverId,
+      };
+    }
+
+    const created = await this.usersRepository.create({
+      id: randomUUID(),
+      name,
+      email: normalizedEmail,
+      passwordHash,
+      role: 'DRIVER',
+      driverId,
+    });
+
+    return {
+      id: created.id,
+      name: created.name,
+      email: created.email,
+      role: created.role,
+      driverId: created.driverId ?? driverId,
+    };
+  }
+
   async login(dto: LoginDto) {
     const user = await this.validateCredentials(dto.email, dto.password);
     return this.issueTokens(user);

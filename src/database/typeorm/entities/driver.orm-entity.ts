@@ -17,6 +17,9 @@ export class DriverOrmEntity {
   @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId!: string | null;
 
+  @Column({ name: 'approved_by_user_id', type: 'uuid', nullable: true })
+  approvedByUserId!: string | null;
+
   @Column({ name: 'full_name', type: 'varchar', length: 150 })
   fullName!: string;
 

@@ -62,6 +62,24 @@ export class InMemoryDriversRepository implements DriversRepository {
     return { driver: existing, contacts: this.contacts.get(id) ?? [] };
   }
 
+  async updateAccess(
+    id: string,
+    userId: string | null,
+    approvedByUserId: string | null,
+  ): Promise<DriverWithContacts> {
+    const existing = this.drivers.get(id);
+    if (!existing) {
+      throw new NotFoundException('Motorista nao encontrado');
+    }
+    existing.userId = userId;
+    existing.approvedByUserId = approvedByUserId;
+    if (approvedByUserId) {
+      existing.status = DriverStatus.APROVADO;
+    }
+    existing.updatedAt = new Date();
+    return { driver: existing, contacts: this.contacts.get(id) ?? [] };
+  }
+
   async saveCnhImagePath(id: string, imagePath: string): Promise<DriverWithContacts> {
     const existing = this.drivers.get(id);
     if (!existing) {

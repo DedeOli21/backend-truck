@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   passwordHash: string;
   role: AuthUserRole;
+  driverId?: string | null;
 }
 
 export const AUTH_USERS_REPOSITORY = 'AUTH_USERS_REPOSITORY';
@@ -13,10 +14,10 @@ export const AUTH_USERS_REPOSITORY = 'AUTH_USERS_REPOSITORY';
 export interface AuthUsersRepository {
   findByEmail(email: string): Promise<AuthUser | null>;
   findById(id: string): Promise<AuthUser | null>;
+  findByDriverId(driverId: string): Promise<AuthUser | null>;
   create(user: AuthUser): Promise<AuthUser>;
+  updateCredentials(
+    id: string,
+    data: { email: string; passwordHash: string },
+  ): Promise<AuthUser>;
 }
-
-
-
-
-

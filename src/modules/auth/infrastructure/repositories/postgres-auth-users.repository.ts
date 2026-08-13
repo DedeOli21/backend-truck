@@ -21,13 +21,7 @@ export class PostgresAuthUsersRepository implements AuthUsersRepository {
       return null;
     }
 
-    return {
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      passwordHash: row.passwordHash,
-      role: row.role,
-    };
+    return this.toDomain(row);
   }
 
   async findById(id: string): Promise<AuthUser | null> {
@@ -36,13 +30,16 @@ export class PostgresAuthUsersRepository implements AuthUsersRepository {
       return null;
     }
 
-    return {
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      passwordHash: row.passwordHash,
-      role: row.role,
-    };
+    return this.toDomain(row);
+  }
+
+  async findByDriverId(driverId: string): Promise<AuthUser | null> {
+    const row = await this.usersRepository.findOne({ where: { driverId } });
+    if (!row) {
+      return null;
+    }
+
+    return this.toDomain(row);
   }
 
   async create(user: AuthUser): Promise<AuthUser> {
@@ -52,16 +49,37 @@ export class PostgresAuthUsersRepository implements AuthUsersRepository {
       email: user.email.toLowerCase(),
       passwordHash: user.passwordHash,
       role: user.role as UserRole,
+      driverId: user.driverId ?? null,
     });
 
     const saved = await this.usersRepository.save(row);
 
+    return this.toDomain(saved);
+  }
+
+  async updateCredentials(
+    id: string,
+    data: { email: string; passwordHash: string },
+  ): Promise<AuthUser> {
+    const row = await this.usersRepository.findOne({ where: { id } });
+    if (!row) {
+      throw new Error('Usuario nao encontrado');
+    }
+    row.email = data.email.toLowerCase();
+    row.passwordHash = data.passwordHash;
+    await this.usersRepository.save(row);
+
+    return this.toDomain(row);
+  }
+
+  private toDomain(row: UserOrmEntity): AuthUser {
     return {
-      id: saved.id,
-      name: saved.name,
-      email: saved.email,
-      passwordHash: saved.passwordHash,
-      role: saved.role,
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      passwordHash: row.passwordHash,
+      role: row.role,
+      driverId: row.driverId ?? null,
     };
   }
 }

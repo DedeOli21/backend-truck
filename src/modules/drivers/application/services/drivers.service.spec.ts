@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { DriverStatus } from '@database/typeorm/entities/enums';
 import { DriversService } from '@applications/drivers/application/services/drivers.service';
+import { AuthService } from '@applications/auth/application/services/auth.service';
 import { InMemoryDriverAuditLogRepository } from '@drivers/infrastructure/repositories/in-memory-driver-audit-log.repository';
 import { InMemoryDriversRepository } from '@drivers/infrastructure/repositories/in-memory-drivers.repository';
 import { CreateDriverDto } from '@drivers/presentation/dtos/create-driver.dto';
@@ -35,7 +36,21 @@ describe('DriversService', () => {
       json: async () => ({ erro: false }),
     } as Response);
 
-    service = new DriversService(new InMemoryDriversRepository(), new InMemoryDriverAuditLogRepository());
+    const authServiceMock = {
+      upsertDriverCredentials: jest.fn().mockImplementation(async (_driverId: string, name: string, email: string, _password: string) => ({
+        id: 'user-driver-1',
+        name,
+        email,
+        role: 'DRIVER',
+        driverId: _driverId,
+      })),
+    } as unknown as AuthService;
+
+    service = new DriversService(
+      new InMemoryDriversRepository(),
+      new InMemoryDriverAuditLogRepository(),
+      authServiceMock,
+    );
   });
 
   afterEach(() => {
@@ -107,5 +122,26 @@ describe('DriversService', () => {
 
     expect(aprovados).toHaveLength(1);
     expect(emAnalise).toHaveLength(0);
+  });
+
+  it('deve definir acesso e aprovar um motorista', async () => {
+    const created = await service.create(validPayload(), 'admin-1');
+
+    const approved = await service.defineDriverAccess(
+      created.id,
+      'motorista@empresa.com',
+      'senha123',
+      'admin-1',
+    );
+
+    expect(approved.status).toBe(DriverStatus.APROVADO);
+    expect(approved.hasAccess).toBe(true);
+    expect(approved.approvedByUserId).toBe('admin-1');
+  });
+
+  it('deve lancar NotFoundException ao definir acesso de motorista inexistente', async () => {
+    await expect(
+      service.defineDriverAccess('missing-id', 'x@y.com', 'senha123', 'admin-1'),
+    ).rejects.toThrow(NotFoundException);
   });
 });

@@ -20,5 +20,10 @@ export interface DriversRepository {
     contacts: DriverReferenceContactEntity[],
   ): Promise<DriverWithContacts>;
   updateStatus(id: string, status: DriverStatus): Promise<DriverWithContacts>;
+  updateAccess(
+    id: string,
+    userId: string | null,
+    approvedByUserId: string | null,
+  ): Promise<DriverWithContacts>;
   saveCnhImagePath(id: string, imagePath: string): Promise<DriverWithContacts>;
 }

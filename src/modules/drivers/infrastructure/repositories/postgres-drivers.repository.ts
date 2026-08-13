@@ -80,6 +80,25 @@ export class PostgresDriversRepository implements DriversRepository {
     return this.mustFindById(id);
   }
 
+  async updateAccess(
+    id: string,
+    userId: string | null,
+    approvedByUserId: string | null,
+  ): Promise<DriverWithContacts> {
+    const result = await this.driversRepository.update(
+      { id },
+      {
+        userId,
+        approvedByUserId,
+        ...(approvedByUserId ? { status: DriverStatus.APROVADO } : {}),
+      },
+    );
+    if (!result.affected) {
+      throw new NotFoundException('Motorista nao encontrado');
+    }
+    return this.mustFindById(id);
+  }
+
   async saveCnhImagePath(id: string, imagePath: string): Promise<DriverWithContacts> {
     const result = await this.driversRepository.update({ id }, { cnhImagePath: imagePath });
     if (!result.affected) {
@@ -99,7 +118,8 @@ export class PostgresDriversRepository implements DriversRepository {
   private driverToOrm(driver: DriverEntity): DeepPartial<DriverOrmEntity> {
     return {
       id: driver.id,
-      userId: null,
+      userId: driver.userId,
+      approvedByUserId: driver.approvedByUserId,
       fullName: driver.fullName,
       cpf: driver.cpf,
       pis: driver.pis,
@@ -154,6 +174,8 @@ export class PostgresDriversRepository implements DriversRepository {
       row.status,
       row.createdAt,
       row.updatedAt,
+      row.userId,
+      row.approvedByUserId,
     );
     const contacts = (row.contacts ?? []).map(
       (contact) =>

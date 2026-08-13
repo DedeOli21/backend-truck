@@ -34,6 +34,7 @@ import {
   mimeTypeFromPath,
 } from '@drivers/infrastructure/storage/cnh-image-storage';
 import { CreateDriverDto } from '@drivers/presentation/dtos/create-driver.dto';
+import { DefineDriverAccessDto } from '@drivers/presentation/dtos/define-driver-access.dto';
 import { UpdateDriverStatusDto } from '@drivers/presentation/dtos/update-driver-status.dto';
 import { UpdateDriverDto } from '@drivers/presentation/dtos/update-driver.dto';
 
@@ -81,6 +82,16 @@ export class DriversController {
     @Body() dto: UpdateDriverStatusDto,
   ) {
     return this.driversService.updateStatus(id, dto.status, req.user.sub);
+  }
+
+  @Post(':id/access')
+  @ApiOperation({ summary: 'Definir e-mail/senha de acesso e aprovar motorista' })
+  async defineDriverAccess(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DefineDriverAccessDto,
+  ) {
+    return this.driversService.defineDriverAccess(id, dto.email, dto.password, req.user.sub);
   }
 
   @Post(':id/cnh-image')

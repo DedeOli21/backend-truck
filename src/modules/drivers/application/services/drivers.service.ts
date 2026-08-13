@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CnhCategory, DriverAuditAction, DriverStatus, PixKeyType } from '@database/typeorm/entities/enums';
+import { AuthService } from '@applications/auth/application/services/auth.service';
 import { DriverAuditLogEntity } from '@drivers/domain/entities/driver-audit-log.entity';
 import { DriverEntity } from '@drivers/domain/entities/driver.entity';
 import { DriverReferenceContactEntity } from '@drivers/domain/entities/driver-reference-contact.entity';
@@ -44,6 +45,8 @@ export interface DriverResponse {
   pixKeyType: PixKeyType;
   pixKey: string;
   status: DriverStatus;
+  hasAccess: boolean;
+  approvedByUserId: string | null;
   contacts: Array<{ id: string; name: string; phone: string; relationship: string }>;
   createdAt: string;
   updatedAt: string;
@@ -54,6 +57,7 @@ export class DriversService {
   constructor(
     @Inject(DRIVERS_REPOSITORY) private readonly driversRepository: DriversRepository,
     @Inject(DRIVER_AUDIT_LOG_REPOSITORY) private readonly auditLogRepository: DriverAuditLogRepository,
+    private readonly authService: AuthService,
   ) {}
 
   private readonly logger = new Logger(DriversService.name);
@@ -156,6 +160,33 @@ export class DriversService {
 
   async updateStatus(id: string, status: DriverStatus, actorUserId: string): Promise<DriverResponse> {
     const saved = await this.driversRepository.updateStatus(id, status);
+    await this.logAction(id, DriverAuditAction.STATUS_CHANGED, actorUserId, this.toResponse(saved));
+    return this.toResponse(saved);
+  }
+
+  async defineDriverAccess(
+    id: string,
+    email: string,
+    password: string,
+    actorUserId: string,
+  ): Promise<DriverResponse> {
+    const record = await this.driversRepository.findById(id);
+    if (!record) {
+      throw new NotFoundException('Motorista nao encontrado');
+    }
+
+    const user = await this.authService.upsertDriverCredentials(
+      record.driver.id,
+      record.driver.fullName,
+      email,
+      password,
+    );
+
+    const saved = await this.driversRepository.updateAccess(
+      id,
+      user.id,
+      actorUserId,
+    );
     await this.logAction(id, DriverAuditAction.STATUS_CHANGED, actorUserId, this.toResponse(saved));
     return this.toResponse(saved);
   }
@@ -273,6 +304,8 @@ export class DriversService {
       pixKeyType: driver.pixKeyType,
       pixKey: driver.pixKey,
       status: driver.status,
+      hasAccess: Boolean(driver.userId),
+      approvedByUserId: driver.approvedByUserId,
       contacts: contacts.map((contact) => ({
         id: contact.id,
         name: contact.name,
