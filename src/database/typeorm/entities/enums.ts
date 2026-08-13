@@ -27,6 +27,30 @@ export enum PayableStatus {
   PAID = 'PAID',
 }
 
+export enum DriverStatus {
+  EM_ANALISE = 'EM_ANALISE',
+  APROVADO = 'APROVADO',
+  REPROVADO = 'REPROVADO',
+}
 
+export enum CnhCategory {
+  A = 'A',
+  B = 'B',
+  C = 'C',
+  D = 'D',
+  E = 'E',
+}
 
+export enum PixKeyType {
+  CPF = 'CPF',
+  CNPJ = 'CNPJ',
+  EMAIL = 'EMAIL',
+  PHONE = 'PHONE',
+  RANDOM = 'RANDOM',
+}
 
+export enum DriverAuditAction {
+  CREATED = 'CREATED',
+  UPDATED = 'UPDATED',
+  STATUS_CHANGED = 'STATUS_CHANGED',
+}

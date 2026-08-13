@@ -12,6 +12,7 @@ const config: Config = {
     '^@modules/(.*)$': '<rootDir>/src/modules/$1',
     '^@common/(.*)$': '<rootDir>/src/common/$1',
     '^@database/(.*)$': '<rootDir>/src/database/$1',
+    '^@drivers/(.*)$': '<rootDir>/src/modules/drivers/$1',
     '^@transactions/(.*)$': '<rootDir>/src/modules/transactions/$1',
     '^@finance/(.*)$': '<rootDir>/src/modules/finance/$1',
     '^@payables/(.*)$': '<rootDir>/src/modules/payables/$1',

@@ -15,6 +15,7 @@
       "@modules/*": ["src/modules/*"],
       "@common/*": ["src/common/*"],
       "@database/*": ["src/database/*"],
+      "@drivers/*": ["src/modules/drivers/*"],
       "@transactions/*": ["src/modules/transactions/*"],
       "@finance/*": ["src/modules/finance/*"],
       "@payables/*": ["src/modules/payables/*"],
