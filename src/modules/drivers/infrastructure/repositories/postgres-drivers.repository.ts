@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, DeepPartial, Repository } from 'typeorm';
 import { DriverStatus } from '@database/typeorm/entities/enums';
 import { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
 import { DriverReferenceContactOrmEntity } from '@database/typeorm/entities/driver-reference-contact.orm-entity';
@@ -16,14 +16,22 @@ export class PostgresDriversRepository implements DriversRepository {
     private readonly driversRepository: Repository<DriverOrmEntity>,
     @InjectRepository(DriverReferenceContactOrmEntity)
     private readonly contactsRepository: Repository<DriverReferenceContactOrmEntity>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(
     driver: DriverEntity,
     contacts: DriverReferenceContactEntity[],
   ): Promise<DriverWithContacts> {
-    await this.driversRepository.save(this.driverToOrm(driver));
-    await this.contactsRepository.save(contacts.map((contact) => this.contactToOrm(contact)));
+    await this.dataSource.transaction(async (manager) => {
+      const driversRepo = manager.getRepository(DriverOrmEntity);
+      const contactsRepo = manager.getRepository(DriverReferenceContactOrmEntity);
+      await driversRepo.save(driversRepo.create(this.driverToOrm(driver)));
+      await contactsRepo.save(
+        contacts.map((contact) => contactsRepo.create(this.contactToOrm(contact))),
+      );
+    });
     return this.mustFindById(driver.id);
   }
 
@@ -51,10 +59,16 @@ export class PostgresDriversRepository implements DriversRepository {
     driver: DriverEntity,
     contacts: DriverReferenceContactEntity[],
   ): Promise<DriverWithContacts> {
-    const { id: _id, ...fields } = this.driverToOrm(driver);
-    await this.driversRepository.update({ id }, fields);
-    await this.contactsRepository.delete({ driverId: id });
-    await this.contactsRepository.save(contacts.map((contact) => this.contactToOrm(contact)));
+    const { id: _id, userId: _userId, ...fields } = this.driverToOrm(driver);
+    await this.dataSource.transaction(async (manager) => {
+      const driversRepo = manager.getRepository(DriverOrmEntity);
+      const contactsRepo = manager.getRepository(DriverReferenceContactOrmEntity);
+      await driversRepo.update({ id }, fields);
+      await contactsRepo.delete({ driverId: id });
+      await contactsRepo.save(
+        contacts.map((contact) => contactsRepo.create(this.contactToOrm(contact))),
+      );
+    });
     return this.mustFindById(id);
   }
 
@@ -76,8 +90,8 @@ export class PostgresDriversRepository implements DriversRepository {
     return record;
   }
 
-  private driverToOrm(driver: DriverEntity): DriverOrmEntity {
-    return this.driversRepository.create({
+  private driverToOrm(driver: DriverEntity): DeepPartial<DriverOrmEntity> {
+    return {
       id: driver.id,
       userId: null,
       fullName: driver.fullName,
@@ -97,17 +111,19 @@ export class PostgresDriversRepository implements DriversRepository {
       pixKeyType: driver.pixKeyType,
       pixKey: driver.pixKey,
       status: driver.status,
-    });
+    };
   }
 
-  private contactToOrm(contact: DriverReferenceContactEntity): DriverReferenceContactOrmEntity {
-    return this.contactsRepository.create({
+  private contactToOrm(
+    contact: DriverReferenceContactEntity,
+  ): DeepPartial<DriverReferenceContactOrmEntity> {
+    return {
       id: contact.id,
       driverId: contact.driverId,
       name: contact.name,
       phone: contact.phone,
       relationship: contact.relationship,
-    });
+    };
   }
 
   private toDomain(row: DriverOrmEntity): DriverWithContacts {
