@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+require("dotenv/config");
 require("reflect-metadata");
 const typeorm_1 = require("typeorm");
 const entities_1 = require("./entities");

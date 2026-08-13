@@ -153,7 +153,21 @@
               "lambdaRole"
             ]
           ]
-        }
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
       }
     },
     "ApiLambdaFunction": {
@@ -163,13 +177,13 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/backend-truck-api/prod/1773792084731-2026-03-18T00:01:24.731Z/backend-truck-api.zip"
+          "S3Key": "serverless/backend-truck-api/prod/1774045832321-2026-03-20T22:30:32.321Z/backend-truck-api.zip"
         },
         "Handler": "src/lambda.handler",
         "Runtime": "nodejs20.x",
         "FunctionName": "backend-truck-api-prod-api",
         "MemorySize": 512,
-        "Timeout": 15,
+        "Timeout": 29,
         "Environment": {
           "Variables": {
             "NODE_ENV": "development",
@@ -179,10 +193,14 @@
             "DATABASE_HOST": "amw-truck.c7gg0g0sw4tn.us-east-2.rds.amazonaws.com",
             "DATABASE_PORT": "5432",
             "DATABASE_USER": "AMW_ADMIN",
-            "DATABASE_PASSWORD": "cWW5cla_I1v5I3054B]zM*PxPisJ",
+            "DATABASE_PASSWORD": "AmwTruck2026Prod77",
             "DATABASE_NAME": "truckdb",
             "DATABASE_SSL": "true",
-            "DATABASE_URL": "postgresql://AMW_ADMIN:\"cWW5cla_I1v5I3054B]zM*PxPisJ\"@amw-truck.c7gg0g0sw4tn.us-east-2.rds.amazonaws.com:5432/truckdb"
+            "CORS_ORIGINS": "https://main.domernyar0nvy1.amplifyapp.com,https://main.dnmemvgn9yvq4.amplifyapp.com,https://main.dnmemvgn9yqv4.amplifyapp.com,http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173",
+            "DATABASE_URL": "postgresql://AMW_ADMIN:AmwTruck2026Prod77@amw-truck.c7gg0g0sw4tn.us-east-2.rds.amazonaws.com:5432/truckdb",
+            "LAMBDA_SG_ID": "sg-068d874ef57b88367",
+            "PRIVATE_SUBNET_1_ID": "subnet-0eed2aa949ac71a1c",
+            "PRIVATE_SUBNET_2_ID": "subnet-09e3ba4c1048c83ee"
           }
         },
         "Role": {
@@ -190,20 +208,29 @@
             "IamRoleLambdaExecution",
             "Arn"
           ]
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            "sg-068d874ef57b88367"
+          ],
+          "SubnetIds": [
+            "subnet-0eed2aa949ac71a1c",
+            "subnet-09e3ba4c1048c83ee"
+          ]
         }
       },
       "DependsOn": [
         "ApiLogGroup"
       ]
     },
-    "ApiLambdaVersion7fUb9TLht6ZUlzYb4LDJsLJVVoWhQpkBRLmGghNk": {
+    "ApiLambdaVersionLChBvmqyEvOkBjy1Ud53SnfDpAys6FEXOYFc2KOkFs": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ApiLambdaFunction"
         },
-        "CodeSha256": "eRzp/7u0Q/wrxPaMlIVRmz2HF+cd70ZTB+0XEWkmaxg="
+        "CodeSha256": "0GlsW+tbOvKlTrnPBuNu2kFUs62Ilg7ENhJqbfcStCI="
       }
     },
     "HttpApi": {
@@ -314,7 +341,7 @@
     "ApiLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ApiLambdaVersion7fUb9TLht6ZUlzYb4LDJsLJVVoWhQpkBRLmGghNk"
+        "Ref": "ApiLambdaVersionLChBvmqyEvOkBjy1Ud53SnfDpAys6FEXOYFc2KOkFs"
       },
       "Export": {
         "Name": "sls-backend-truck-api-prod-ApiLambdaFunctionQualifiedArn"

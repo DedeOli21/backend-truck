@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
+require("dotenv/config");
 const serverless_express_1 = __importDefault(require("@codegenie/serverless-express"));
 const platform_express_1 = require("@nestjs/platform-express");
 const bootstrap_1 = require("./bootstrap");

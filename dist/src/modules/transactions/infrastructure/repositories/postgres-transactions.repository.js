@@ -87,6 +87,7 @@ exports.PostgresTransactionsRepository = PostgresTransactionsRepository = __deco
     __param(0, (0, typeorm_1.InjectRepository)(entities_1.TransactionOrmEntity)),
     __param(1, (0, typeorm_1.InjectRepository)(entities_1.WalletOrmEntity)),
     __param(2, (0, typeorm_1.InjectDataSource)()),
+    __param(3, (0, common_1.Inject)(user_wallet_provisioning_service_1.UserWalletProvisioningService)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.DataSource,

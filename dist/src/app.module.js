@@ -14,6 +14,7 @@ const auth_module_1 = require("./modules/auth/auth.module");
 const finance_module_1 = require("./modules/finance/finance.module");
 const payables_module_1 = require("./modules/payables/payables.module");
 const transactions_module_1 = require("./modules/transactions/transactions.module");
+const health_controller_1 = require("./common/controllers/health.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -27,6 +28,7 @@ exports.AppModule = AppModule = __decorate([
             finance_module_1.FinanceModule,
             payables_module_1.PayablesModule,
         ],
+        controllers: [health_controller_1.HealthController],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

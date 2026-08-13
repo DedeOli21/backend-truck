@@ -91,6 +91,7 @@ exports.TransactionsController = TransactionsController = __decorate([
     (0, common_1.Controller)('transactions'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN', 'DRIVER'),
+    __param(0, (0, common_1.Inject)(transactions_service_1.TransactionsService)),
     __metadata("design:paramtypes", [transactions_service_1.TransactionsService])
 ], TransactionsController);
 //# sourceMappingURL=transactions.controller.js.map

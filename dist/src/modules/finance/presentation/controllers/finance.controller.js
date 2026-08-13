@@ -71,6 +71,7 @@ exports.FinanceController = FinanceController = __decorate([
     (0, common_1.Controller)('finance'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN', 'DRIVER'),
+    __param(0, (0, common_1.Inject)(finance_service_1.FinanceService)),
     __metadata("design:paramtypes", [finance_service_1.FinanceService])
 ], FinanceController);
 //# sourceMappingURL=finance.controller.js.map

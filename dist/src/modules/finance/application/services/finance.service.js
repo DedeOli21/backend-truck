@@ -42,6 +42,7 @@ exports.FinanceService = FinanceService;
 exports.FinanceService = FinanceService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(finance_repository_1.FINANCE_REPOSITORY)),
+    __param(1, (0, common_1.Inject)(transactions_service_1.TransactionsService)),
     __metadata("design:paramtypes", [Object, transactions_service_1.TransactionsService])
 ], FinanceService);
 //# sourceMappingURL=finance.service.js.map
