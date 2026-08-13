@@ -1,16 +1,72 @@
-﻿# Backend Truck - Gestão de Transporte e Logística
+# 🚛 Backend Truck — Gestão de Transporte e Logística
 
-API backend em **NestJS + TypeScript**, com arquitetura de **Monólito Modular** (DDD + Clean Architecture), autenticação JWT, RBAC, e persistência em PostgreSQL com TypeORM.
+> API REST do sistema **AMW Transporte**, responsável por autenticação, controle financeiro, gestão de fretes, abastecimento e contas a pagar para motoristas e administradores de transporte.
 
-## Stack
+🔗 **Repositório Frontend:** [github.com/DedeOli21/frontend-truck](https://github.com/DedeOli21/frontend-truck)
 
-- Node.js 20+
-- NestJS 10
-- TypeORM + PostgreSQL
-- JWT + Passport
-- Jest + Supertest
-- ESLint + TypeScript Typecheck
-- Serverless Framework (AWS Lambda + API Gateway)
+---
+
+## 📦 O que é este projeto?
+
+Este é o **backend (API)** de um sistema completo de gestão para empresas de transporte e motoristas autônomos. Ele expõe endpoints REST protegidos por JWT, com controle de acesso por roles (`ADMIN`, `DRIVER`), e gerencia todo o fluxo financeiro do dia a dia do transporte:
+
+- Cadastro e login de usuários
+- Registro de entradas (fretes) e saídas (combustível, despesas)
+- Controle de saldo em carteira
+- Contas a pagar com vencimento
+- Sincronização com saldo bancário (Open Banking simulado)
+
+---
+
+## 🛠️ Stack Tecnológica
+
+| Camada | Tecnologia | Versão |
+|--------|------------|--------|
+| **Runtime** | Node.js | 20+ |
+| **Framework** | NestJS | 10 |
+| **Linguagem** | TypeScript | 5 |
+| **Banco de Dados** | PostgreSQL | 15 |
+| **ORM** | TypeORM | 0.3+ |
+| **Autenticação** | JWT + Passport | — |
+| **Testes** | Jest + Supertest | — |
+| **Qualidade** | ESLint + TypeScript strict | — |
+| **Containerização** | Docker + Docker Compose | — |
+| **Infraestrutura** | VPS OVHcloud + Nginx + Cloudflare + Vercel | — |
+
+---
+
+## 🚀 Infraestrutura & Deploy
+
+A aplicação roda em produção em uma **VPS OVHcloud** com Docker Compose.
+
+### Arquitetura de deploy
+
+```
+Internet → Cloudflare DNS → VPS OVHcloud (40.160.82.252)
+                                    │
+                                    ├── Nginx (:80) → Backend NestJS (:3000)
+                                    └── PostgreSQL (:5432, rede interna Docker)
+```
+
+### Ambientes
+
+| Ambiente | URL | Plataforma |
+|----------|-----|------------|
+| **Produção (temporário)** | `https://xxx.trycloudflare.com` | Cloudflare Tunnel |
+| **Produção (futuro)** | `https://api.amw-transporte.com.br` | Cloudflare + VPS |
+| **Frontend** | `https://front-end-truck.vercel.app` | Vercel |
+
+📖 **Documentação completa da infraestrutura:** veja [`docs/INFRASTRUCTURE.md`](./docs/INFRASTRUCTURE.md)
+
+### Deploy automatizado
+
+```bash
+# Da máquina local — envia código, builda e sobe containers na VPS
+cd /home/david/projeto-freela/backend-truck
+python3 deploy_vps.py
+```
+
+---
 
 ## Arquitetura
 
@@ -307,11 +363,26 @@ curl -X PATCH http://localhost:3000/payables/<PAYABLE_ID>/pay \
   -H "Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
+## 🐳 Docker (produção)
+
+Para rodar localmente com Docker Compose (simula produção):
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+Containers:
+- `truck-postgres` — PostgreSQL 15
+- `truck-backend` — NestJS compilado
+- `truck-nginx` — Reverse proxy na porta 80
+
+---
+
 ## Observações importantes
 
 - Em ambiente de teste (`NODE_ENV=test`), parte dos módulos usa repositórios in-memory para testes rápidos.
 - Em ambientes normais, usa PostgreSQL via TypeORM.
-- Para produção na AWS, utilize migrations no pipeline antes de liberar tráfego.
+- Para produção na VPS, utilize `deploy_vps.py` ou siga o guia em [`docs/INFRASTRUCTURE.md`](./docs/INFRASTRUCTURE.md).
 
 ## Deploy Serverless
 
@@ -325,3 +396,12 @@ Remover stack:
 npm run sls:remove
 ```
 
+---
+
+## 👤 Autor
+
+**David (DedeOli21)** — [GitHub](https://github.com/DedeOli21)
+
+## 📄 Licença
+
+Este projeto é privado e de uso exclusivo da AMW Transporte.
