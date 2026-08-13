@@ -27,6 +27,10 @@ describe('isValidCpf', () => {
   it('rejeita CPF com tamanho errado', () => {
     expect(isValidCpf('123')).toBe(false);
   });
+
+  it('rejeita CPF vazio', () => {
+    expect(isValidCpf('')).toBe(false);
+  });
 });
 
 describe('isValidCnpj', () => {
@@ -37,6 +41,14 @@ describe('isValidCnpj', () => {
   it('rejeita CNPJ com digito verificador errado', () => {
     expect(isValidCnpj('11444777000199')).toBe(false);
   });
+
+  it('rejeita CNPJ com todos os digitos iguais', () => {
+    expect(isValidCnpj('11111111111111')).toBe(false);
+  });
+
+  it('rejeita CNPJ vazio', () => {
+    expect(isValidCnpj('')).toBe(false);
+  });
 });
 
 describe('isValidPis', () => {
@@ -46,6 +58,14 @@ describe('isValidPis', () => {
 
   it('rejeita PIS com digito verificador errado', () => {
     expect(isValidPis('12056275310')).toBe(false);
+  });
+
+  it('rejeita PIS com todos os digitos iguais', () => {
+    expect(isValidPis('11111111111')).toBe(false);
+  });
+
+  it('rejeita PIS vazio', () => {
+    expect(isValidPis('')).toBe(false);
   });
 });
 
