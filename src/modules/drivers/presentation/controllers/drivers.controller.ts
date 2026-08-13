@@ -5,6 +5,8 @@ import {
   Get,
   Inject,
   Param,
+  ParseEnumPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -18,6 +20,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { createReadStream } from 'fs';
+import { join } from 'path';
 import type { Response } from 'express';
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -25,7 +28,11 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.interface';
 import { DriverStatus } from '@database/typeorm/entities/enums';
 import { DriversService } from '@applications/drivers/application/services/drivers.service';
-import { cnhImageUploadOptions, mimeTypeFromPath } from '@drivers/infrastructure/storage/cnh-image-storage';
+import {
+  CNH_UPLOADS_DIR,
+  cnhImageUploadOptions,
+  mimeTypeFromPath,
+} from '@drivers/infrastructure/storage/cnh-image-storage';
 import { CreateDriverDto } from '@drivers/presentation/dtos/create-driver.dto';
 import { UpdateDriverStatusDto } from '@drivers/presentation/dtos/update-driver-status.dto';
 import { UpdateDriverDto } from '@drivers/presentation/dtos/update-driver.dto';
@@ -46,19 +53,23 @@ export class DriversController {
 
   @Get()
   @ApiOperation({ summary: 'Listar motoristas' })
-  async list(@Query('status') status?: DriverStatus) {
+  async list(@Query('status', new ParseEnumPipe(DriverStatus, { optional: true })) status?: DriverStatus) {
     return this.driversService.list(status);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Detalhar motorista' })
-  async findById(@Param('id') id: string) {
+  async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.driversService.findById(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Editar cadastro do motorista' })
-  async update(@Req() req: AuthenticatedRequest, @Param('id') id: string, @Body() dto: UpdateDriverDto) {
+  async update(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateDriverDto,
+  ) {
     return this.driversService.update(id, dto, req.user.sub);
   }
 
@@ -66,7 +77,7 @@ export class DriversController {
   @ApiOperation({ summary: 'Aprovar ou reprovar motorista' })
   async updateStatus(
     @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDriverStatusDto,
   ) {
     return this.driversService.updateStatus(id, dto.status, req.user.sub);
@@ -82,20 +93,21 @@ export class DriversController {
   @ApiOperation({ summary: 'Enviar imagem da CNH' })
   async uploadCnhImage(
     @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
       throw new BadRequestException('Arquivo de imagem obrigatorio');
     }
-    return this.driversService.saveCnhImagePath(id, file.path, req.user.sub);
+    return this.driversService.saveCnhImagePath(id, file.filename, req.user.sub);
   }
 
   @Get(':id/cnh-image')
   @ApiOperation({ summary: 'Baixar imagem da CNH' })
-  async getCnhImage(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
-    const imagePath = await this.driversService.getCnhImagePath(id);
-    res.set({ 'Content-Type': mimeTypeFromPath(imagePath) });
-    return new StreamableFile(createReadStream(imagePath));
+  async getCnhImage(@Param('id', ParseUUIDPipe) id: string, @Res({ passthrough: true }) res: Response) {
+    const storedFilename = await this.driversService.getCnhImagePath(id);
+    const absolutePath = join(CNH_UPLOADS_DIR, storedFilename);
+    res.set({ 'Content-Type': mimeTypeFromPath(absolutePath) });
+    return new StreamableFile(createReadStream(absolutePath));
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, DeepPartial, Repository } from 'typeorm';
 import { DriverStatus } from '@database/typeorm/entities/enums';
@@ -73,12 +73,18 @@ export class PostgresDriversRepository implements DriversRepository {
   }
 
   async updateStatus(id: string, status: DriverStatus): Promise<DriverWithContacts> {
-    await this.driversRepository.update({ id }, { status });
+    const result = await this.driversRepository.update({ id }, { status });
+    if (!result.affected) {
+      throw new NotFoundException('Motorista nao encontrado');
+    }
     return this.mustFindById(id);
   }
 
   async saveCnhImagePath(id: string, imagePath: string): Promise<DriverWithContacts> {
-    await this.driversRepository.update({ id }, { cnhImagePath: imagePath });
+    const result = await this.driversRepository.update({ id }, { cnhImagePath: imagePath });
+    if (!result.affected) {
+      throw new NotFoundException('Motorista nao encontrado');
+    }
     return this.mustFindById(id);
   }
 

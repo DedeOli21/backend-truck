@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CnhCategory, DriverAuditAction, DriverStatus, PixKeyType } from '@database/typeorm/entities/enums';
 import { DriverAuditLogEntity } from '@drivers/domain/entities/driver-audit-log.entity';
@@ -56,6 +56,8 @@ export class DriversService {
     @Inject(DRIVER_AUDIT_LOG_REPOSITORY) private readonly auditLogRepository: DriverAuditLogRepository,
   ) {}
 
+  private readonly logger = new Logger(DriversService.name);
+
   async create(dto: CreateDriverDto, actorUserId: string): Promise<DriverResponse> {
     await this.assertCpfAvailable(dto.cpf);
     this.assertPisValid(dto.pis);
@@ -92,7 +94,7 @@ export class DriversService {
     );
 
     const saved = await this.driversRepository.create(driver, contacts);
-    await this.logAction(id, DriverAuditAction.CREATED, actorUserId, saved);
+    await this.logAction(id, DriverAuditAction.CREATED, actorUserId, this.toResponse(saved));
     return this.toResponse(saved);
   }
 
@@ -148,13 +150,13 @@ export class DriversService {
     );
 
     const saved = await this.driversRepository.update(id, driver, contacts);
-    await this.logAction(id, DriverAuditAction.UPDATED, actorUserId, saved);
+    await this.logAction(id, DriverAuditAction.UPDATED, actorUserId, this.toResponse(saved));
     return this.toResponse(saved);
   }
 
   async updateStatus(id: string, status: DriverStatus, actorUserId: string): Promise<DriverResponse> {
     const saved = await this.driversRepository.updateStatus(id, status);
-    await this.logAction(id, DriverAuditAction.STATUS_CHANGED, actorUserId, saved);
+    await this.logAction(id, DriverAuditAction.STATUS_CHANGED, actorUserId, this.toResponse(saved));
     return this.toResponse(saved);
   }
 
@@ -226,16 +228,23 @@ export class DriversService {
     actorUserId: string,
     snapshot: unknown,
   ): Promise<void> {
-    await this.auditLogRepository.log(
-      new DriverAuditLogEntity(
-        randomUUID(),
-        driverId,
-        action,
-        actorUserId,
-        JSON.parse(JSON.stringify(snapshot)) as Record<string, unknown>,
-        new Date(),
-      ),
-    );
+    try {
+      await this.auditLogRepository.log(
+        new DriverAuditLogEntity(
+          randomUUID(),
+          driverId,
+          action,
+          actorUserId,
+          JSON.parse(JSON.stringify(snapshot)) as Record<string, unknown>,
+          new Date(),
+        ),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Falha ao registrar log de auditoria (${action}) para motorista ${driverId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   private toResponse(record: DriverWithContacts): DriverResponse {

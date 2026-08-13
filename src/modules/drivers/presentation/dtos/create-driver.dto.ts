@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  MaxLength,
   MinLength,
   ValidateNested,
 } from 'class-validator';
@@ -18,6 +19,7 @@ export class CreateDriverDto {
   @ApiProperty({ example: 'Joao da Silva Santos' })
   @Matches(/^[A-Za-zÀ-ÿ\s]+$/, { message: 'Nome deve conter apenas letras e espacos' })
   @MinLength(5, { message: 'Nome deve ter ao menos 5 caracteres' })
+  @MaxLength(150, { message: 'Nome deve ter no maximo 150 caracteres' })
   fullName!: string;
 
   @ApiProperty({ example: '52998224725' })
@@ -31,26 +33,31 @@ export class CreateDriverDto {
   @ApiProperty({ example: 'Rua das Flores' })
   @IsString()
   @MinLength(1)
+  @MaxLength(255, { message: 'Logradouro deve ter no maximo 255 caracteres' })
   addressStreet!: string;
 
   @ApiProperty({ example: '123' })
   @IsString()
   @MinLength(1)
+  @MaxLength(20, { message: 'Numero deve ter no maximo 20 caracteres' })
   addressNumber!: string;
 
   @ApiPropertyOptional({ example: 'Apto 12' })
   @IsOptional()
   @IsString()
+  @MaxLength(255, { message: 'Complemento deve ter no maximo 255 caracteres' })
   addressComplement?: string;
 
   @ApiProperty({ example: 'Centro' })
   @IsString()
   @MinLength(1)
+  @MaxLength(150, { message: 'Bairro deve ter no maximo 150 caracteres' })
   addressNeighborhood!: string;
 
   @ApiProperty({ example: 'Sao Paulo' })
   @IsString()
   @MinLength(1)
+  @MaxLength(150, { message: 'Cidade deve ter no maximo 150 caracteres' })
   addressCity!: string;
 
   @ApiProperty({ example: 'SP' })
@@ -64,6 +71,7 @@ export class CreateDriverDto {
   @ApiProperty({ example: '123456789' })
   @IsString()
   @MinLength(1)
+  @MaxLength(30, { message: 'Numero da CNH deve ter no maximo 30 caracteres' })
   cnhNumber!: string;
 
   @ApiProperty({ enum: CnhCategory })
@@ -77,6 +85,7 @@ export class CreateDriverDto {
   @ApiProperty({ example: 'motorista@example.com' })
   @IsString()
   @MinLength(3)
+  @MaxLength(255, { message: 'Chave PIX deve ter no maximo 255 caracteres' })
   pixKey!: string;
 
   @ApiProperty({ type: [ReferenceContactDto] })

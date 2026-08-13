@@ -7,7 +7,13 @@ import { extname, join } from 'path';
 export const CNH_UPLOADS_DIR =
   process.env.DRIVER_CNH_UPLOADS_DIR ?? join(process.cwd(), 'uploads', 'drivers', 'cnh');
 
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_MIME_TYPES: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const cnhImageUploadOptions = {
   storage: diskStorage({
@@ -16,11 +22,21 @@ export const cnhImageUploadOptions = {
       callback(null, CNH_UPLOADS_DIR);
     },
     filename: (req: Request, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) => {
-      callback(null, `${req.params.id}${extname(file.originalname)}`);
+      const id = String(req.params.id ?? '');
+      if (!UUID_REGEX.test(id)) {
+        callback(new BadRequestException('Id de motorista invalido'), '');
+        return;
+      }
+      const extension = ALLOWED_MIME_TYPES[file.mimetype];
+      if (!extension) {
+        callback(new BadRequestException('Imagem deve ser JPEG, PNG ou WEBP'), '');
+        return;
+      }
+      callback(null, `${id}${extension}`);
     },
   }),
   fileFilter: (_req: Request, file: Express.Multer.File, callback: FileFilterCallback) => {
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+    if (!ALLOWED_MIME_TYPES[file.mimetype]) {
       callback(new BadRequestException('Imagem deve ser JPEG, PNG ou WEBP'));
       return;
     }
