@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Post,
   Req,
   UseGuards,
@@ -28,7 +29,7 @@ import { SyncOpenBankingDto } from '@finance/presentation/dtos/sync-open-banking
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'DRIVER')
 export class FinanceController {
-  constructor(private readonly financeService: FinanceService) {}
+  constructor(@Inject(FinanceService) private readonly financeService: FinanceService) {}
 
   @Get('balance')
   @Throttle({ default: { ttl: 60000, limit: 10 } })

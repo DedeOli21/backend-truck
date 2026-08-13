@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { createConfiguredApp } from '@app/bootstrap';
 
 async function bootstrap() {

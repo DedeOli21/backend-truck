@@ -6,6 +6,7 @@ import { DriversModule } from '@modules/drivers/drivers.module';
 import { FinanceModule } from '@modules/finance/finance.module';
 import { PayablesModule } from '@modules/payables/payables.module';
 import { TransactionsModule } from '@modules/transactions/transactions.module';
+import { HealthController } from '@common/controllers/health.controller';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { TransactionsModule } from '@modules/transactions/transactions.module';
     PayablesModule,
     DriversModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
 

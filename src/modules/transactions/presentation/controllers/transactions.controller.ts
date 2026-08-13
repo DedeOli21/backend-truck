@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Post,
   Req,
   UseGuards,
@@ -29,7 +30,10 @@ import { CreateFuelDto } from '@transactions/presentation/dtos/create-fuel.dto';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'DRIVER')
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(
+    @Inject(TransactionsService)
+    private readonly transactionsService: TransactionsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar extrato de movimentacoes' })

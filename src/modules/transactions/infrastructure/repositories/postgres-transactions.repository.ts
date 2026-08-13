@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { UserWalletProvisioningService } from '@database/typeorm/repositories/user-wallet-provisioning.service';
@@ -20,6 +20,7 @@ export class PostgresTransactionsRepository implements TransactionsRepository {
     private readonly walletsRepository: Repository<WalletOrmEntity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    @Inject(UserWalletProvisioningService)
     private readonly provisioningService: UserWalletProvisioningService,
   ) {}
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OpenBankingSyncEntity } from '@finance/domain/entities/open-banking-sync.entity';
@@ -14,6 +14,7 @@ export class PostgresFinanceRepository implements FinanceRepository {
     private readonly syncRepository: Repository<OpenBankingSyncOrmEntity>,
     @InjectRepository(WalletOrmEntity)
     private readonly walletsRepository: Repository<WalletOrmEntity>,
+    @Inject(UserWalletProvisioningService)
     private readonly provisioningService: UserWalletProvisioningService,
   ) {}
 

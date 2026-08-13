@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { DataSource, Repository } from 'typeorm';
@@ -24,6 +24,7 @@ export class PostgresPayablesRepository implements PayablesRepository {
     private readonly walletsRepository: Repository<WalletOrmEntity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    @Inject(UserWalletProvisioningService)
     private readonly provisioningService: UserWalletProvisioningService,
   ) {}
 

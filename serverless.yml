@@ -10,11 +10,17 @@ plugins:
 provider:
   name: aws
   runtime: nodejs20.x
-  region: ${opt:region, 'us-east-1'}
+  region: ${opt:region, 'us-east-2'}
   stage: ${opt:stage, 'dev'}
   memorySize: 512
-  timeout: 15
+  timeout: 29
   logRetentionInDays: 14
+  vpc:
+    securityGroupIds:
+      - ${env:LAMBDA_SG_ID}
+    subnetIds:
+      - ${env:PRIVATE_SUBNET_1_ID}
+      - ${env:PRIVATE_SUBNET_2_ID}
   environment:
     NODE_ENV: ${env:NODE_ENV, 'development'}
     PORT: ${env:PORT, '3000'}
@@ -26,6 +32,7 @@ provider:
     DATABASE_PASSWORD: ${env:DATABASE_PASSWORD, 'truck_password'}
     DATABASE_NAME: ${env:DATABASE_NAME, 'truckdb'}
     DATABASE_SSL: ${env:DATABASE_SSL, 'false'}
+    CORS_ORIGINS: ${env:CORS_ORIGINS, 'http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173'}
 
 functions:
   api:

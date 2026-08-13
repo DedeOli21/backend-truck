@@ -13,6 +13,7 @@ export class FinanceService {
   constructor(
     @Inject(FINANCE_REPOSITORY)
     private readonly financeRepository: FinanceRepository,
+    @Inject(TransactionsService)
     private readonly transactionsService: TransactionsService,
   ) {}
 

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Handler, Context, Callback } from 'aws-lambda';
 import serverlessExpress from '@codegenie/serverless-express';
 import { ExpressAdapter } from '@nestjs/platform-express';

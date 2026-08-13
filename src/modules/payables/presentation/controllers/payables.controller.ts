@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Req,
@@ -26,7 +27,7 @@ import { PayablesService } from '@applications/payables/application/services/pay
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'DRIVER')
 export class PayablesController {
-  constructor(private readonly payablesService: PayablesService) {}
+  constructor(@Inject(PayablesService) private readonly payablesService: PayablesService) {}
 
   @Get()
   @Throttle({ default: { ttl: 60000, limit: 20 } })
