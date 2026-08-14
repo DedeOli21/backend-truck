@@ -26,7 +26,8 @@ import { detectPixKeyType } from '@drivers/domain/validators/pix-key.validator';
 import { CreateDriverPaymentDto } from '@driver-payments/presentation/dtos/create-driver-payment.dto';
 
 export const DRIVER_PAYMENT_RATES = {
-  INSS: 0.09,
+  INSS_BASE_PERCENT: 0.2, // 20% — base de cálculo do INSS sobre o valor digitável
+  INSS_RATE: 0.11, // 11% — alíquota do INSS sobre a base de cálculo
   SEST_SENAT: 0.00016,
 } as const;
 
@@ -226,7 +227,9 @@ export class DriverPaymentsService {
   }
 
   private calculateTotals(baseAmount: number, tollAmount: number) {
-    const inss = round2(baseAmount * DRIVER_PAYMENT_RATES.INSS);
+    const inss = round2(
+      baseAmount * DRIVER_PAYMENT_RATES.INSS_BASE_PERCENT * DRIVER_PAYMENT_RATES.INSS_RATE,
+    );
     const sestSenat = round2(baseAmount * DRIVER_PAYMENT_RATES.SEST_SENAT);
     const total = round2(baseAmount + inss + sestSenat + tollAmount);
     return { inss, sestSenat, total };

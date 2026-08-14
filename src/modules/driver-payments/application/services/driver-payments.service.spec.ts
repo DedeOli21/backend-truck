@@ -44,9 +44,9 @@ describe('DriverPaymentsService', () => {
     const result = await service.create(validPayload(), 'admin-1');
 
     expect(result.baseAmount).toBe(1000);
-    expect(result.inssAmount).toBe(90);
+    expect(result.inssAmount).toBe(22);
     expect(result.sestSenatAmount).toBe(0.16);
-    expect(result.totalAmount).toBe(1140.16);
+    expect(result.totalAmount).toBe(1072.16);
   });
 
   it('deve puxar automaticamente motorista, placa, RNTRC e PIX', async () => {
