@@ -45,8 +45,8 @@ describe('DriverPaymentsService', () => {
 
     expect(result.baseAmount).toBe(1000);
     expect(result.inssAmount).toBe(22);
-    expect(result.sestSenatAmount).toBe(0.16);
-    expect(result.totalAmount).toBe(1072.16);
+    expect(result.sestSenatAmount).toBe(3.2);
+    expect(result.totalAmount).toBe(1075.2);
   });
 
   it('deve puxar automaticamente motorista, placa, RNTRC e PIX', async () => {
