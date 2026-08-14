@@ -28,7 +28,7 @@ import { CreateDriverPaymentDto } from '@driver-payments/presentation/dtos/creat
 export const DRIVER_PAYMENT_RATES = {
   BASE_PERCENT: 0.2, // 20% — base de cálculo comum (INSS e SEST/SENAT) sobre o valor digitável
   INSS_RATE: 0.11, // 11% — alíquota do INSS sobre a base de cálculo
-  SEST_SENAT_RATE: 0.016, // 1,6% — alíquota do SEST/SENAT sobre a base de cálculo
+  SEST_SENAT_RATE: 0.025, // 2,5% — alíquota do SEST/SENAT sobre a base de cálculo
 } as const;
 
 export interface DriverPaymentResponse {
