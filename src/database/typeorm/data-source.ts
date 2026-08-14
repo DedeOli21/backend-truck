@@ -11,6 +11,8 @@ import {
   DriverOrmEntity,
   DriverReferenceContactOrmEntity,
   DriverAuditLogOrmEntity,
+  DriverPaymentOrmEntity,
+  DriverPaymentAuditLogOrmEntity,
 } from '@database/typeorm/entities';
 
 
@@ -35,6 +37,8 @@ export default new DataSource({
     DriverOrmEntity,
     DriverReferenceContactOrmEntity,
     DriverAuditLogOrmEntity,
+    DriverPaymentOrmEntity,
+    DriverPaymentAuditLogOrmEntity,
   ],
   migrations: ['src/database/typeorm/migrations/*.ts', 'dist/database/typeorm/migrations/*.js'],
   synchronize: false,

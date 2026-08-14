@@ -54,3 +54,20 @@ export enum DriverAuditAction {
   UPDATED = 'UPDATED',
   STATUS_CHANGED = 'STATUS_CHANGED',
 }
+
+export enum TollStatus {
+  PAID = 'PAID',
+  UNPAID = 'UNPAID',
+}
+
+export enum DriverPaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+}
+
+export enum DriverPaymentAuditAction {
+  CREATED = 'CREATED',
+  UPDATED = 'UPDATED',
+  PAYMENT_EXECUTED = 'PAYMENT_EXECUTED',
+  DELETED = 'DELETED',
+}

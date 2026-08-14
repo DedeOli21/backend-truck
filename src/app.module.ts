@@ -5,6 +5,7 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { DriversModule } from '@modules/drivers/drivers.module';
 import { FinanceModule } from '@modules/finance/finance.module';
 import { PayablesModule } from '@modules/payables/payables.module';
+import { DriverPaymentsModule } from '@modules/driver-payments/driver-payments.module';
 import { TransactionsModule } from '@modules/transactions/transactions.module';
 import { HealthController } from '@common/controllers/health.controller';
 
@@ -17,6 +18,7 @@ import { HealthController } from '@common/controllers/health.controller';
     FinanceModule,
     PayablesModule,
     DriversModule,
+    DriverPaymentsModule,
   ],
   controllers: [HealthController],
 })

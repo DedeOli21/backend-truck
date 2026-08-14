@@ -19,6 +19,9 @@ export class TruckOrmEntity {
   @Column({ type: 'varchar', length: 20, unique: true })
   plate!: string;
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  rntrc!: string | null;
+
   @Column({ name: 'brand_model', type: 'varchar', length: 120 })
   brandModel!: string;
 

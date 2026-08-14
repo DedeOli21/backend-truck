@@ -7,6 +7,8 @@ export { OpenBankingSyncOrmEntity } from '@database/typeorm/entities/open-bankin
 export { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
 export { DriverReferenceContactOrmEntity } from '@database/typeorm/entities/driver-reference-contact.orm-entity';
 export { DriverAuditLogOrmEntity } from '@database/typeorm/entities/driver-audit-log.orm-entity';
+export { DriverPaymentOrmEntity } from '@database/typeorm/entities/driver-payment.orm-entity';
+export { DriverPaymentAuditLogOrmEntity } from '@database/typeorm/entities/driver-payment-audit-log.orm-entity';
 export {
   UserRole,
   TransactionDirection,
@@ -17,6 +19,9 @@ export {
   CnhCategory,
   PixKeyType,
   DriverAuditAction,
+  TollStatus,
+  DriverPaymentStatus,
+  DriverPaymentAuditAction,
 } from '@database/typeorm/entities/enums';
 
 

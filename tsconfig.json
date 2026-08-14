@@ -19,6 +19,7 @@
       "@transactions/*": ["src/modules/transactions/*"],
       "@finance/*": ["src/modules/finance/*"],
       "@payables/*": ["src/modules/payables/*"],
+      "@driver-payments/*": ["src/modules/driver-payments/*"],
       "@auth/*": ["src/modules/auth/*"],
       "@applications/*": ["src/modules/*"]
     },

@@ -16,6 +16,7 @@ const config: Config = {
     '^@transactions/(.*)$': '<rootDir>/src/modules/transactions/$1',
     '^@finance/(.*)$': '<rootDir>/src/modules/finance/$1',
     '^@payables/(.*)$': '<rootDir>/src/modules/payables/$1',
+    '^@driver-payments/(.*)$': '<rootDir>/src/modules/driver-payments/$1',
     '^@auth/(.*)$': '<rootDir>/src/modules/auth/$1',
     '^@applications/(.*)$': '<rootDir>/src/modules/$1',
   },
