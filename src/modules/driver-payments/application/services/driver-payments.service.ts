@@ -233,7 +233,7 @@ export class DriverPaymentsService {
     const sestSenat = round2(
       baseAmount * DRIVER_PAYMENT_RATES.BASE_PERCENT * DRIVER_PAYMENT_RATES.SEST_SENAT_RATE,
     );
-    const total = round2(baseAmount + inss + sestSenat + tollAmount);
+    const total = round2(baseAmount - inss - sestSenat - tollAmount);
     return { inss, sestSenat, total };
   }
 
