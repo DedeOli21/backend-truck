@@ -6,3 +6,9 @@ dist/*
 .superpowers/
 
 dist/tsconfig.tsbuildinfo
+# Certificados digitais: nunca versionar
+certs/
+*.pfx
+*.p12
+*.pem
+*.key

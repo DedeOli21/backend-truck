@@ -42,6 +42,12 @@ services:
       DATABASE_SSL: "false"
       CORS_ORIGINS: ${CORS_ORIGINS}
       ENABLE_SWAGGER: "false"
+      # As variáveis NFE_* vêm do .env.production (env_file) e não são repetidas
+      # aqui de propósito: o bloco environment sobrepõe o env_file, e um valor
+      # vazio apagaria a senha do certificado.
+    volumes:
+      # Certificado A1 montado somente leitura; nunca entra na imagem.
+      - ./certs:/app/certs:ro
     networks:
       - truck-network
     depends_on:

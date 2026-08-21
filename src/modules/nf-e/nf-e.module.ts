@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
 import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
-import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
+import { criarNfeProvider } from '@nf-e/infrastructure/providers/nfe-provider.factory';
 import { NfeController } from '@nf-e/presentation/controllers/nf-e.controller';
 
 @Module({
@@ -14,8 +14,9 @@ import { NfeController } from '@nf-e/presentation/controllers/nf-e.controller';
     NfeService,
     JwtAuthGuard,
     RolesGuard,
-    // Trocar por um provider com certificado A1/A3 quando a integração existir.
-    { provide: NFE_PROVIDER, useClass: NotConfiguredNfeProvider },
+    // Usa o certificado quando NFE_CERT_PATH e NFE_CERT_PASSWORD existem;
+    // caso contrário responde de forma explícita que não consultou.
+    { provide: NFE_PROVIDER, useFactory: () => criarNfeProvider() },
   ],
   exports: [NfeService],
 })
