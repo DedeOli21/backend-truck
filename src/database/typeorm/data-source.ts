@@ -5,6 +5,7 @@ import {
   OpenBankingSyncOrmEntity,
   PayableOrmEntity,
   TransactionOrmEntity,
+  RefuelingOrmEntity,
   TruckOrmEntity,
   UserOrmEntity,
   WalletOrmEntity,
