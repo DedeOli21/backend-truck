@@ -17,6 +17,7 @@
       "@database/*": ["src/database/*"],
       "@drivers/*": ["src/modules/drivers/*"],
       "@trucks/*": ["src/modules/trucks/*"],
+      "@refuelings/*": ["src/modules/refuelings/*"],
       "@transactions/*": ["src/modules/transactions/*"],
       "@finance/*": ["src/modules/finance/*"],
       "@payables/*": ["src/modules/payables/*"],

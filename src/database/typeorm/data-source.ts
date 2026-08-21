@@ -30,6 +30,7 @@ export default new DataSource({
   entities: [
     UserOrmEntity,
     TruckOrmEntity,
+    RefuelingOrmEntity,
     WalletOrmEntity,
     TransactionOrmEntity,
     PayableOrmEntity,

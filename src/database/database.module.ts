@@ -4,6 +4,7 @@ import { OpenBankingSyncOrmEntity } from '@database/typeorm/entities/open-bankin
 import { PayableOrmEntity } from '@database/typeorm/entities/payable.orm-entity';
 import { TransactionOrmEntity } from '@database/typeorm/entities/transaction.orm-entity';
 import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
+import { RefuelingOrmEntity } from '@database/typeorm/entities/refueling.orm-entity';
 import { UserOrmEntity } from '@database/typeorm/entities/user.orm-entity';
 import { WalletOrmEntity } from '@database/typeorm/entities/wallet.orm-entity';
 import { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
@@ -29,6 +30,7 @@ const isTest = process.env.NODE_ENV === 'test';
             entities: [
               UserOrmEntity,
               TruckOrmEntity,
+              RefuelingOrmEntity,
               WalletOrmEntity,
               TransactionOrmEntity,
               PayableOrmEntity,
