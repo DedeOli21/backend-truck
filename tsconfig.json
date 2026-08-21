@@ -16,6 +16,7 @@
       "@common/*": ["src/common/*"],
       "@database/*": ["src/database/*"],
       "@drivers/*": ["src/modules/drivers/*"],
+      "@trucks/*": ["src/modules/trucks/*"],
       "@transactions/*": ["src/modules/transactions/*"],
       "@finance/*": ["src/modules/finance/*"],
       "@payables/*": ["src/modules/payables/*"],
