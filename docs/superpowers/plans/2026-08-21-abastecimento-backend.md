@@ -275,14 +275,12 @@ Cobrir, com repositório in-memory e um `DriversService` dublê:
     const driverId = await this.driversService.findIdByUserId(actor.userId);
 
     if (!driverId) {
-      throw new ForbiddenException('Seu usuário не está vinculado a um motorista.');
+      throw new ForbiddenException('Seu usuário não está vinculado a um motorista.');
     }
 
     return driverId;
   }
 ```
-
-Atenção: a linha acima contém um erro proposital de digitação (`не`) para ser corrigido — escrever "não". Verificar acentuação de todas as mensagens ao implementar.
 
 - [ ] **Step 4: Rodar e ver passar.**
 
