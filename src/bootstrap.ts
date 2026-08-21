@@ -90,8 +90,31 @@ export async function createConfiguredApp(adapter?: ExpressAdapter) {
     try {
       const swaggerConfig = new DocumentBuilder()
         .setTitle('Backend Truck API')
-        .setDescription('API de gestao de transporte e logistica')
-        .setVersion('1.0.0')
+        .setDescription(
+          [
+            'API de gestão de transporte e logística.',
+            '',
+            'Todas as rotas, exceto as de autenticação, exigem um token JWT no header ',
+            '`Authorization: Bearer <token>`. Use **Autenticação → POST /auth/login** para obter o token ',
+            'e o botão **Authorize** acima para aplicá-lo às chamadas desta página.',
+            '',
+            'Papéis: `ADMIN` tem acesso irrestrito; `DRIVER` enxerga e altera apenas os próprios ',
+            'lançamentos, mesmo quando informa o id de outro motorista na requisição.',
+          ].join(''),
+        )
+        .setVersion('1.1.0')
+        // A ordem abaixo define a ordem das seções na página do Swagger.
+        .addTag('Autenticação', 'Cadastro, login e renovação de token')
+        .addTag('Veículos', 'Cadastro da frota: placa, tipo, capacidade e status')
+        .addTag('Motoristas', 'Cadastro, aprovação, acesso e CNH dos motoristas')
+        .addTag('Abastecimentos', 'Lançamento de abastecimentos, com litros, valor e odômetro')
+        .addTag('Gastos de Veículos', 'Pedágio, borracharia, manutenção rápida e outros gastos')
+        .addTag('Financeiro', 'Saldo consolidado e sincronização via Open Banking')
+        .addTag('Transações', 'Extrato de movimentações da carteira do usuário')
+        .addTag('Contas a Pagar', 'Contas a pagar e baixa de pagamento')
+        .addTag('Pagamentos de Motorista', 'Cálculo, execução e histórico de pagamentos')
+        .addTag('NF-e', 'Consulta e validação de NF-e e NFC-e por chave, QR Code ou código de barras')
+        .addTag('Infraestrutura', 'Disponibilidade da API')
         .addBearerAuth(
           {
             type: 'http',

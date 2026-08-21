@@ -9,12 +9,14 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -24,7 +26,7 @@ import { TransactionsService } from '@applications/transactions/application/serv
 import { CreateFreightDto } from '@transactions/presentation/dtos/create-freight.dto';
 import { CreateFuelDto } from '@transactions/presentation/dtos/create-fuel.dto';
 
-@ApiTags('Transactions')
+@ApiTags('Transações')
 @ApiBearerAuth('access-token')
 @Controller('transactions')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -37,6 +39,7 @@ export class TransactionsController {
 
   @Get()
   @ApiOperation({ summary: 'Listar extrato de movimentacoes' })
+  @ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou expirado.' })
   @ApiOkResponse({
     description: 'Extrato retornado com sucesso',
     schema: {
@@ -60,6 +63,8 @@ export class TransactionsController {
   @Post('freight')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Registrar entrada de frete' })
+  @ApiBadRequestResponse({ description: 'Valor não positivo ou descrição muito curta.' })
+  @ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou expirado.' })
   @ApiBody({ type: CreateFreightDto })
   @ApiCreatedResponse({ description: 'Frete registrado com sucesso' })
   async createFreight(
@@ -72,6 +77,8 @@ export class TransactionsController {
   @Post('fuel')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Registrar saida de combustivel' })
+  @ApiBadRequestResponse({ description: 'Valor não positivo, descrição muito curta ou saldo insuficiente.' })
+  @ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou expirado.' })
   @ApiBody({ type: CreateFuelDto })
   @ApiCreatedResponse({ description: 'Abastecimento registrado com sucesso' })
   async createFuel(@Req() req: AuthenticatedRequest, @Body() dto: CreateFuelDto) {

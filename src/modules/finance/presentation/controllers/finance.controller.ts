@@ -9,12 +9,15 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -23,7 +26,7 @@ import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.i
 import { FinanceService } from '@applications/finance/application/services/finance.service';
 import { SyncOpenBankingDto } from '@finance/presentation/dtos/sync-open-banking.dto';
 
-@ApiTags('Finance')
+@ApiTags('Financeiro')
 @ApiBearerAuth('access-token')
 @Controller('finance')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -34,6 +37,7 @@ export class FinanceController {
   @Get('balance')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Consultar saldo consolidado' })
+  @ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou expirado.' })
   @ApiOkResponse({
     description: 'Saldo retornado com sucesso',
     schema: {
@@ -52,6 +56,9 @@ export class FinanceController {
   @Roles('ADMIN')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Sincronizar saldo via Open Banking (ADMIN)' })
+  @ApiBadRequestResponse({ description: 'Provedor ou saldo inválido.' })
+  @ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou expirado.' })
+  @ApiForbiddenResponse({ description: 'Rota restrita a ADMIN.' })
   @ApiBody({ type: SyncOpenBankingDto })
   @ApiCreatedResponse({ description: 'Sincronizacao concluida com sucesso' })
   async syncOpenBanking(

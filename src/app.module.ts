@@ -6,6 +6,7 @@ import { DriversModule } from '@modules/drivers/drivers.module';
 import { TrucksModule } from '@trucks/trucks.module';
 import { RefuelingsModule } from '@refuelings/refuelings.module';
 import { VehicleExpensesModule } from '@vehicle-expenses/vehicle-expenses.module';
+import { NfeModule } from '@nf-e/nf-e.module';
 import { FinanceModule } from '@modules/finance/finance.module';
 import { PayablesModule } from '@modules/payables/payables.module';
 import { DriverPaymentsModule } from '@modules/driver-payments/driver-payments.module';
@@ -24,6 +25,7 @@ import { HealthController } from '@common/controllers/health.controller';
     TrucksModule,
     RefuelingsModule,
     VehicleExpensesModule,
+    NfeModule,
     DriverPaymentsModule,
   ],
   controllers: [HealthController],

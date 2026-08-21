@@ -14,7 +14,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -24,8 +35,10 @@ import { CreateDriverPaymentDto } from '@driver-payments/presentation/dtos/creat
 import { UpdateDriverPaymentDto } from '@driver-payments/presentation/dtos/update-driver-payment.dto';
 import { ListDriverPaymentsQueryDto } from '@driver-payments/presentation/dtos/list-driver-payments-query.dto';
 
-@ApiTags('Driver Payments')
+@ApiTags('Pagamentos de Motorista')
 @ApiBearerAuth('access-token')
+@ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou expirado.' })
+@ApiForbiddenResponse({ description: 'Rota restrita a ADMIN.' })
 @Controller('driver-payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
@@ -35,6 +48,7 @@ export class DriverPaymentsController {
   @Get()
   @Throttle({ default: { ttl: 60000, limit: 20 } })
   @ApiOperation({ summary: 'Listar pagamentos de motoristas' })
+  @ApiOkResponse({ description: 'Lista de pagamentos.' })
   list(@Query() query: ListDriverPaymentsQueryDto) {
     return this.service.list({
       driverId: query.driverId,
@@ -51,12 +65,16 @@ export class DriverPaymentsController {
   @Get('driver-context/:driverId')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Buscar contexto do motorista (placa, RNTRC, PIX)' })
+  @ApiOkResponse({ description: 'Contexto do motorista, com veículo vinculado quando houver.' })
+  @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
   driverContext(@Param('driverId', ParseUUIDPipe) driverId: string) {
     return this.service.getDriverContext(driverId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Detalhar pagamento de motorista' })
+  @ApiOkResponse({ description: 'Pagamento encontrado.' })
+  @ApiNotFoundResponse({ description: 'Pagamento não encontrado.' })
   findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.findById(id);
   }
@@ -64,6 +82,9 @@ export class DriverPaymentsController {
   @Post()
   @Throttle({ default: { ttl: 60000, limit: 20 } })
   @ApiOperation({ summary: 'Criar pagamento de motorista' })
+  @ApiCreatedResponse({ description: 'Pagamento criado, com INSS, SEST/SENAT e pedágio já deduzidos do total.' })
+  @ApiBadRequestResponse({ description: 'Valores inválidos.' })
+  @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
   create(@Req() req: AuthenticatedRequest, @Body() dto: CreateDriverPaymentDto) {
     return this.service.create(dto, req.user.sub);
   }
@@ -71,6 +92,9 @@ export class DriverPaymentsController {
   @Patch(':id')
   @Throttle({ default: { ttl: 60000, limit: 20 } })
   @ApiOperation({ summary: 'Editar pagamento de motorista' })
+  @ApiOkResponse({ description: 'Pagamento atualizado.' })
+  @ApiBadRequestResponse({ description: 'Valores inválidos.' })
+  @ApiNotFoundResponse({ description: 'Pagamento não encontrado.' })
   update(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
@@ -82,6 +106,8 @@ export class DriverPaymentsController {
   @Patch(':id/pay')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Marcar pagamento como pago' })
+  @ApiOkResponse({ description: 'Pagamento marcado como pago.' })
+  @ApiNotFoundResponse({ description: 'Pagamento não encontrado.' })
   pay(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.service.markPaid(id, req.user.sub);
   }
@@ -90,6 +116,8 @@ export class DriverPaymentsController {
   @HttpCode(204)
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Excluir pagamento de motorista' })
+  @ApiNoContentResponse({ description: 'Pagamento excluído.' })
+  @ApiNotFoundResponse({ description: 'Pagamento não encontrado.' })
   async remove(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     await this.service.remove(id, req.user.sub);
   }

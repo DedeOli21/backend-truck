@@ -18,7 +18,19 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { createReadStream } from 'fs';
 import { join } from 'path';
 import type { Response } from 'express';
@@ -38,8 +50,10 @@ import { DefineDriverAccessDto } from '@drivers/presentation/dtos/define-driver-
 import { UpdateDriverStatusDto } from '@drivers/presentation/dtos/update-driver-status.dto';
 import { UpdateDriverDto } from '@drivers/presentation/dtos/update-driver.dto';
 
-@ApiTags('Drivers')
+@ApiTags('Motoristas')
 @ApiBearerAuth('access-token')
+@ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou expirado.' })
+@ApiForbiddenResponse({ description: 'Rota restrita a ADMIN.' })
 @Controller('drivers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
@@ -48,24 +62,35 @@ export class DriversController {
 
   @Post()
   @ApiOperation({ summary: 'Cadastrar motorista' })
+  @ApiCreatedResponse({ description: 'Motorista cadastrado com status EM_ANALISE.' })
+  @ApiBadRequestResponse({ description: 'CPF, PIS, PIX, CEP ou contatos inválidos.' })
+  @ApiConflictResponse({ description: 'Já existe motorista com esse CPF.' })
   async create(@Req() req: AuthenticatedRequest, @Body() dto: CreateDriverDto) {
     return this.driversService.create(dto, req.user.sub);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar motoristas' })
+  @ApiQuery({ name: 'status', required: false, enum: DriverStatus, description: 'Filtra por situação do cadastro' })
+  @ApiOkResponse({ description: 'Lista de motoristas.' })
   async list(@Query('status', new ParseEnumPipe(DriverStatus, { optional: true })) status?: DriverStatus) {
     return this.driversService.list(status);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Detalhar motorista' })
+  @ApiOkResponse({ description: 'Motorista encontrado.' })
+  @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
   async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.driversService.findById(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Editar cadastro do motorista' })
+  @ApiOkResponse({ description: 'Cadastro atualizado.' })
+  @ApiBadRequestResponse({ description: 'Dados inválidos.' })
+  @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
+  @ApiConflictResponse({ description: 'CPF já usado por outro motorista.' })
   async update(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
@@ -76,6 +101,9 @@ export class DriversController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Aprovar ou reprovar motorista' })
+  @ApiOkResponse({ description: 'Situação atualizada.' })
+  @ApiBadRequestResponse({ description: 'Status inválido.' })
+  @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
   async updateStatus(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
@@ -86,6 +114,10 @@ export class DriversController {
 
   @Post(':id/access')
   @ApiOperation({ summary: 'Definir e-mail/senha de acesso e aprovar motorista' })
+  @ApiOkResponse({ description: 'Acesso criado e motorista aprovado.' })
+  @ApiBadRequestResponse({ description: 'E-mail ou senha inválidos.' })
+  @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
+  @ApiConflictResponse({ description: 'E-mail já usado por outro usuário.' })
   async defineDriverAccess(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
@@ -102,6 +134,9 @@ export class DriversController {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   @UseInterceptors(FileInterceptor('file', cnhImageUploadOptions as any))
   @ApiOperation({ summary: 'Enviar imagem da CNH' })
+  @ApiCreatedResponse({ description: 'Imagem armazenada.' })
+  @ApiBadRequestResponse({ description: 'Arquivo ausente ou com formato não aceito.' })
+  @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
   async uploadCnhImage(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
@@ -115,6 +150,8 @@ export class DriversController {
 
   @Get(':id/cnh-image')
   @ApiOperation({ summary: 'Baixar imagem da CNH' })
+  @ApiOkResponse({ description: 'Imagem da CNH.' })
+  @ApiNotFoundResponse({ description: 'Motorista sem imagem de CNH.' })
   async getCnhImage(@Param('id', ParseUUIDPipe) id: string, @Res({ passthrough: true }) res: Response) {
     const storedFilename = await this.driversService.getCnhImagePath(id);
     const absolutePath = join(CNH_UPLOADS_DIR, storedFilename);

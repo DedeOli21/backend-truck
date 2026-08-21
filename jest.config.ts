@@ -16,6 +16,7 @@ const config: Config = {
     '^@trucks/(.*)$': '<rootDir>/src/modules/trucks/$1',
     '^@refuelings/(.*)$': '<rootDir>/src/modules/refuelings/$1',
     '^@vehicle-expenses/(.*)$': '<rootDir>/src/modules/vehicle-expenses/$1',
+    '^@nf-e/(.*)$': '<rootDir>/src/modules/nf-e/$1',
     '^@transactions/(.*)$': '<rootDir>/src/modules/transactions/$1',
     '^@finance/(.*)$': '<rootDir>/src/modules/finance/$1',
     '^@payables/(.*)$': '<rootDir>/src/modules/payables/$1',
