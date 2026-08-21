@@ -12,3 +12,6 @@ certs/
 *.p12
 *.pem
 *.key
+
+# Documentos fiscais de exemplo: contem dados pessoais reais
+cte-example/
