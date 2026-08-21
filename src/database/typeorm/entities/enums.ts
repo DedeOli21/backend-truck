@@ -71,3 +71,16 @@ export enum DriverPaymentAuditAction {
   PAYMENT_EXECUTED = 'PAYMENT_EXECUTED',
   DELETED = 'DELETED',
 }
+
+export enum TruckType {
+  TRUCK = 'TRUCK',
+  CARRETA = 'CARRETA',
+  BITREM = 'BITREM',
+  VAN = 'VAN',
+}
+
+export enum TruckStatus {
+  ATIVO = 'ATIVO',
+  MANUTENCAO = 'MANUTENCAO',
+  INATIVO = 'INATIVO',
+}
