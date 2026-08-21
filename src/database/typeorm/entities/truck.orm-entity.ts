@@ -8,8 +8,14 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserOrmEntity } from '@database/typeorm/entities/user.orm-entity';
+import { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
 import { TransactionOrmEntity } from '@database/typeorm/entities/transaction.orm-entity';
+import { TruckStatus, TruckType } from '@database/typeorm/entities/enums';
+
+const numericTransformer = {
+  to: (value: number) => value,
+  from: (value: string | null) => (value === null ? 0 : Number(value)),
+};
 
 @Entity({ name: 'trucks' })
 export class TruckOrmEntity {
@@ -28,12 +34,21 @@ export class TruckOrmEntity {
   @Column({ type: 'int', nullable: true })
   year!: number | null;
 
+  @Column({ type: 'varchar', length: 20, default: TruckType.TRUCK })
+  type!: TruckType;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0, transformer: numericTransformer })
+  capacity!: number;
+
+  @Column({ type: 'varchar', length: 20, default: TruckStatus.ATIVO })
+  status!: TruckStatus;
+
   @Column({ name: 'driver_id', type: 'uuid', nullable: true })
   driverId!: string | null;
 
-  @ManyToOne(() => UserOrmEntity, (user) => user.trucks, { nullable: true })
+  @ManyToOne(() => DriverOrmEntity, { nullable: true })
   @JoinColumn({ name: 'driver_id' })
-  driver!: UserOrmEntity | null;
+  driver!: DriverOrmEntity | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
