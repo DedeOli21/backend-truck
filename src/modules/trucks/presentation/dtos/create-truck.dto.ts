@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -12,8 +13,13 @@ import {
 } from 'class-validator';
 import { TruckStatus, TruckType } from '@database/typeorm/entities/enums';
 
+export const normalizePlate = (plate: string) =>
+  plate.trim().toUpperCase().replace(/[\s-]/g, '');
+
 export class CreateTruckDto {
   @ApiProperty({ example: 'ABC1D23' })
+  // Normaliza antes de validar: sem isso " abc1d23 " reprova no Length.
+  @Transform(({ value }) => (typeof value === 'string' ? normalizePlate(value) : value))
   @IsString()
   @Length(7, 8)
   plate!: string;

@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { TruckStatus, TruckType } from '@database/typeorm/entities/enums';
 import { TruckEntity } from '@trucks/domain/entities/truck.entity';
 import { TRUCKS_REPOSITORY, TrucksRepository } from '@trucks/domain/repositories/trucks.repository';
-import { CreateTruckDto } from '@trucks/presentation/dtos/create-truck.dto';
+import { CreateTruckDto, normalizePlate } from '@trucks/presentation/dtos/create-truck.dto';
 import { UpdateTruckDto } from '@trucks/presentation/dtos/update-truck.dto';
 
 export interface TruckResponse {
@@ -19,8 +19,6 @@ export interface TruckResponse {
   createdAt: string;
   updatedAt: string;
 }
-
-const normalizePlate = (plate: string) => plate.trim().toUpperCase().replace(/\s|-/g, '');
 
 @Injectable()
 export class TrucksService {
