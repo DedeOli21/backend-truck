@@ -11,6 +11,7 @@ import {
   FamiliaDocumento,
   parseChaveAcesso,
 } from '@nf-e/domain/value-objects/chave-acesso';
+import { CteImportado, parseCteXml } from '@nf-e/domain/value-objects/cte-xml';
 import { OrigemLeitura, extrairChaveDeCodigo } from '@nf-e/domain/value-objects/qr-code';
 import { MOTIVO_NAO_CONFIGURADO } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
 import { ValidarCodigoDto } from '@nf-e/presentation/dtos/validar-codigo.dto';
@@ -144,6 +145,14 @@ export class NfeService {
       },
       sefaz: sefazConsultado(consulta),
     };
+  }
+
+  /**
+   * Lê o XML completo do CT-e. É por aqui que se obtém remetente, destinatário,
+   * valores e carga: a consulta de protocolo na SEFAZ não devolve nada disso.
+   */
+  importarCteXml(xml: string): CteImportado {
+    return parseCteXml(xml);
   }
 
   async validarCodigo(

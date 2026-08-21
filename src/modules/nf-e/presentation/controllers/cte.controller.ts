@@ -16,6 +16,7 @@ import {
   ConsultaNfeResponseDto,
   ValidacaoCodigoResponseDto,
 } from '@nf-e/presentation/dtos/consulta-nfe.response';
+import { ImportarXmlDto } from '@nf-e/presentation/dtos/importar-xml.dto';
 import { ValidarCodigoDto } from '@nf-e/presentation/dtos/validar-codigo.dto';
 
 @ApiTags('CT-e')
@@ -58,5 +59,19 @@ export class CteController {
   })
   async validar(@Body() dto: ValidarCodigoDto) {
     return this.nfeService.validarCodigo(dto, 'CTE');
+  }
+
+  @Post('importar-xml')
+  @ApiOperation({
+    summary: 'Importar XML do CT-e',
+    description:
+      'Recebe o XML do CT-e e devolve o conteúdo estruturado: emitente, remetente, destinatário, trajeto, componentes do valor, carga, NF-e transportadas, RNTRC e protocolo de autorização. É o único caminho para esses dados — a consulta de protocolo na SEFAZ devolve apenas a situação do documento.',
+  })
+  @ApiOkResponse({ description: 'CT-e interpretado.' })
+  @ApiBadRequestResponse({
+    description: 'XML malformado, sem elemento infCte ou com chave de acesso inválida.',
+  })
+  importarXml(@Body() dto: ImportarXmlDto) {
+    return this.nfeService.importarCteXml(dto.xml);
   }
 }
