@@ -27,6 +27,7 @@ export interface DacteExtraido {
   pesoBruto: number | null;
   produtoPredominante: string | null;
   notasFiscais: string[];
+  rntrc: string | null;
   protocolo: string | null;
   autorizadoEm: string | null;
   placa: string | null;
@@ -151,6 +152,7 @@ export const parseDacteTexto = (texto: string): DacteExtraido => {
     pesoBruto: numeroBr(primeiro(texto, /PESO BRUTO\s*\n?([\d.,]+)/)),
     produtoPredominante: primeiro(texto, /PRODUTO PREDOMINANTE\s*\n?([^\n]+)/),
     notasFiscais: chaves.filter((chave) => parseChaveAcesso(chave).familia === 'NFE'),
+    rntrc: primeiro(texto, /RNTRC:?\s*([\d]{6,12})/i),
     protocolo: registrar('protocolo', protocoloLinha?.[1] ?? null),
     autorizadoEm: protocoloLinha?.[2]?.trim() ?? null,
     placa: primeiro(texto, /PLACA\s*:?\s*([A-Z]{3}\s?\d[A-Z0-9]\d{2})/i),

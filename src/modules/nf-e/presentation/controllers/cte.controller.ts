@@ -25,6 +25,7 @@ import {
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
 import {
   ConsultaNfeResponseDto,
@@ -40,7 +41,10 @@ import { ValidarCodigoDto } from '@nf-e/presentation/dtos/validar-codigo.dto';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'DRIVER')
 export class CteController {
-  constructor(@Inject(NfeService) private readonly nfeService: NfeService) {}
+  constructor(
+    @Inject(NfeService) private readonly nfeService: NfeService,
+    @Inject(CteDocumentsService) private readonly documentsService: CteDocumentsService,
+  ) {}
 
   @Get('qr/:chave')
   @ApiOperation({
@@ -81,12 +85,14 @@ export class CteController {
     description:
       'Recebe o XML do CT-e e devolve o conteúdo estruturado: emitente, remetente, destinatário, trajeto, componentes do valor, carga, NF-e transportadas, RNTRC e protocolo de autorização. É o único caminho para esses dados — a consulta de protocolo na SEFAZ devolve apenas a situação do documento.',
   })
-  @ApiOkResponse({ description: 'CT-e interpretado.' })
+  @ApiOkResponse({ description: 'CT-e interpretado e guardado.' })
   @ApiBadRequestResponse({
     description: 'XML malformado, sem elemento infCte ou com chave de acesso inválida.',
   })
-  importarXml(@Body() dto: ImportarXmlDto) {
-    return this.nfeService.importarCteXml(dto.xml);
+  async importarXml(@Body() dto: ImportarXmlDto) {
+    // Importar já guarda: reimportar a mesma chave atualiza o registro e
+    // preserva os vínculos com veículo, motorista e frete.
+    return this.documentsService.salvarDoXml(this.nfeService.importarCteXml(dto.xml));
   }
 
   @Post('importar-pdf')
@@ -112,6 +118,9 @@ export class CteController {
       throw new BadRequestException('Envie o PDF no campo "arquivo".');
     }
 
-    return this.nfeService.importarDactePdf(arquivo.buffer);
+    const extraido = await this.nfeService.importarDactePdf(arquivo.buffer);
+    const salvo = await this.documentsService.salvarDoPdf(extraido, extraido.sefaz.situacao);
+
+    return { ...salvo, camposNaoEncontrados: extraido.camposNaoEncontrados, sefaz: extraido.sefaz };
   }
 }

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '@applications/auth/auth.module';
+import { CteDocumentsModule } from '@cte-documents/cte-documents.module';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
@@ -9,7 +10,7 @@ import { CteController } from '@nf-e/presentation/controllers/cte.controller';
 import { NfeController } from '@nf-e/presentation/controllers/nf-e.controller';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, CteDocumentsModule],
   controllers: [NfeController, CteController],
   providers: [
     NfeService,

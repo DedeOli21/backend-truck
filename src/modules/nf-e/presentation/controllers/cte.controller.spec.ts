@@ -3,6 +3,9 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
+import { CTE_DOCUMENTS_REPOSITORY } from '@cte-documents/domain/repositories/cte-documents.repository';
+import { InMemoryCteDocumentsRepository } from '@cte-documents/infrastructure/repositories/in-memory-cte-documents.repository';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
 import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
 import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
@@ -20,7 +23,12 @@ describe('CteController (rotas)', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [CteController, NfeController],
-      providers: [NfeService, { provide: NFE_PROVIDER, useClass: NotConfiguredNfeProvider }],
+      providers: [
+        NfeService,
+        CteDocumentsService,
+        { provide: NFE_PROVIDER, useClass: NotConfiguredNfeProvider },
+        { provide: CTE_DOCUMENTS_REPOSITORY, useClass: InMemoryCteDocumentsRepository },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })

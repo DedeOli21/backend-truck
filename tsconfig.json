@@ -20,6 +20,7 @@
       "@refuelings/*": ["src/modules/refuelings/*"],
       "@vehicle-expenses/*": ["src/modules/vehicle-expenses/*"],
       "@nf-e/*": ["src/modules/nf-e/*"],
+      "@cte-documents/*": ["src/modules/cte-documents/*"],
       "@transactions/*": ["src/modules/transactions/*"],
       "@finance/*": ["src/modules/finance/*"],
       "@payables/*": ["src/modules/payables/*"],

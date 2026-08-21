@@ -57,7 +57,8 @@ describe('parseDacteTexto', () => {
     expect(dacte.notasFiscais).not.toContain(dacte.chave);
   });
 
-  it('extrai protocolo, CFOP e placa', () => {
+  it('extrai protocolo, CFOP, placa e RNTRC', () => {
+    expect(dacte.rntrc).toBe('56299277');
     expect(dacte.protocolo).toBe('135264179761055');
     expect(dacte.cfop).toBe('6353');
     expect(dacte.placa).toBe('MJA4B09');
