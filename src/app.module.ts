@@ -4,6 +4,7 @@ import { DatabaseModule } from '@database/database.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { DriversModule } from '@modules/drivers/drivers.module';
 import { TrucksModule } from '@trucks/trucks.module';
+import { RefuelingsModule } from '@refuelings/refuelings.module';
 import { FinanceModule } from '@modules/finance/finance.module';
 import { PayablesModule } from '@modules/payables/payables.module';
 import { DriverPaymentsModule } from '@modules/driver-payments/driver-payments.module';
@@ -20,6 +21,7 @@ import { HealthController } from '@common/controllers/health.controller';
     PayablesModule,
     DriversModule,
     TrucksModule,
+    RefuelingsModule,
     DriverPaymentsModule,
   ],
   controllers: [HealthController],
