@@ -86,6 +86,29 @@ describe('DriversService', () => {
     expect(result.pis).toBeNull();
   });
 
+  it('deve manter PIS ao atualizar motorista existente que ja tem PIS', async () => {
+    const created = await service.create(validPayload(), 'admin-1');
+
+    const updated = await service.update(created.id, { ...validPayload(), addressNumber: '456' }, 'admin-1');
+
+    expect(updated.pis).toBe('12056275319');
+    expect(updated.address.number).toBe('456');
+  });
+
+  it('deve permitir limpar o PIS ao atualizar motorista', async () => {
+    const created = await service.create(validPayload(), 'admin-1');
+
+    const updated = await service.update(created.id, { ...validPayload(), pis: '' }, 'admin-1');
+
+    expect(updated.pis).toBeNull();
+  });
+
+  it('deve rejeitar PIS invalido na atualizacao', async () => {
+    const created = await service.create(validPayload(), 'admin-1');
+
+    await expect(service.update(created.id, { ...validPayload(), pis: '12056275310' }, 'admin-1')).rejects.toThrow();
+  });
+
   it('deve rejeitar CPF duplicado', async () => {
     await service.create(validPayload(), 'admin-1');
     await expect(service.create(validPayload(), 'admin-1')).rejects.toThrow();
