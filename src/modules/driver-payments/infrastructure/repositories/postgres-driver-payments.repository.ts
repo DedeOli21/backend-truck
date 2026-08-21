@@ -33,14 +33,13 @@ export class PostgresDriverPaymentsRepository implements DriverPaymentsRepositor
       return null;
     }
 
+    // trucks.driver_id passou a referenciar drivers(id) na migration AddTruckDetails.
     let vehiclePlate: string | null = null;
     let rntrc: string | null = null;
-    if (driver.userId) {
-      const truck = await this.trucksRepository.findOne({ where: { driverId: driver.userId } });
-      if (truck) {
-        vehiclePlate = truck.plate;
-        rntrc = truck.rntrc;
-      }
+    const truck = await this.trucksRepository.findOne({ where: { driverId: driver.id } });
+    if (truck) {
+      vehiclePlate = truck.plate;
+      rntrc = truck.rntrc;
     }
 
     return {

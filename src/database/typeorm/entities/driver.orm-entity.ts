@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { CnhCategory, DriverStatus, PixKeyType } from '@database/typeorm/entities/enums';
 import { DriverReferenceContactOrmEntity } from '@database/typeorm/entities/driver-reference-contact.orm-entity';
+import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
 
 @Entity({ name: 'drivers' })
 export class DriverOrmEntity {
@@ -76,6 +77,9 @@ export class DriverOrmEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
+
+  @OneToMany(() => TruckOrmEntity, (truck) => truck.driver)
+  trucks!: TruckOrmEntity[];
 
   @OneToMany(() => DriverReferenceContactOrmEntity, (contact) => contact.driver)
   contacts!: DriverReferenceContactOrmEntity[];

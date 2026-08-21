@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import { UserRole } from '@database/typeorm/entities/enums';
 import { WalletOrmEntity } from '@database/typeorm/entities/wallet.orm-entity';
-import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
 import { OpenBankingSyncOrmEntity } from '@database/typeorm/entities/open-banking-sync.orm-entity';
 
 @Entity({ name: 'users' })
@@ -39,9 +38,6 @@ export class UserOrmEntity {
 
   @OneToMany(() => WalletOrmEntity, (wallet) => wallet.user)
   wallets!: WalletOrmEntity[];
-
-  @OneToMany(() => TruckOrmEntity, (truck) => truck.driver)
-  trucks!: TruckOrmEntity[];
 
   @OneToMany(() => OpenBankingSyncOrmEntity, (sync) => sync.user)
   openBankingSyncs!: OpenBankingSyncOrmEntity[];
