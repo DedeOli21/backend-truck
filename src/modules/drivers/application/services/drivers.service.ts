@@ -25,7 +25,7 @@ export interface DriverResponse {
   id: string;
   fullName: string;
   cpf: string;
-  pis: string;
+  pis: string | null;
   address: {
     street: string;
     number: string;
@@ -64,7 +64,7 @@ export class DriversService {
 
   async create(dto: CreateDriverDto, actorUserId: string): Promise<DriverResponse> {
     await this.assertCpfAvailable(dto.cpf);
-    this.assertPisValid(dto.pis);
+    const pis = this.normalizePis(dto.pis);
     const pixKeyType = this.detectAndValidatePixKey(dto.pixKey);
     await this.assertCepExists(dto.addressZip);
 
@@ -74,7 +74,7 @@ export class DriversService {
       id,
       dto.fullName.trim(),
       onlyDigits(dto.cpf),
-      onlyDigits(dto.pis),
+      pis,
       dto.addressStreet,
       dto.addressNumber,
       dto.addressComplement ?? null,
@@ -122,7 +122,7 @@ export class DriversService {
     }
 
     await this.assertCpfAvailable(dto.cpf, id);
-    this.assertPisValid(dto.pis);
+    const pis = this.normalizePis(dto.pis);
     const pixKeyType = this.detectAndValidatePixKey(dto.pixKey);
     await this.assertCepExists(dto.addressZip);
 
@@ -130,7 +130,7 @@ export class DriversService {
       id,
       dto.fullName.trim(),
       onlyDigits(dto.cpf),
-      onlyDigits(dto.pis),
+      pis,
       dto.addressStreet,
       dto.addressNumber,
       dto.addressComplement ?? null,
@@ -216,10 +216,15 @@ export class DriversService {
     }
   }
 
-  private assertPisValid(pis: string): void {
-    if (!isValidPis(pis)) {
+  private normalizePis(pis?: string | null): string | null {
+    const digits = onlyDigits(pis ?? '');
+    if (digits === '') {
+      return null;
+    }
+    if (!isValidPis(digits)) {
       throw new BadRequestException('PIS invalido');
     }
+    return digits;
   }
 
   private detectAndValidatePixKey(pixKey: string): PixKeyType {

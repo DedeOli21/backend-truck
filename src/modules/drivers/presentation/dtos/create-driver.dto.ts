@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -26,9 +26,11 @@ export class CreateDriverDto {
   @Matches(/^\d{11}$/, { message: 'CPF deve conter 11 digitos' })
   cpf!: string;
 
-  @ApiProperty({ example: '12056275319' })
+  @ApiPropertyOptional({ example: '12056275319' })
+  @Transform(({ value }) => (typeof value === 'string' && value.trim() === '' ? undefined : value))
+  @IsOptional()
   @Matches(/^\d{11}$/, { message: 'PIS deve conter 11 digitos' })
-  pis!: string;
+  pis?: string;
 
   @ApiProperty({ example: 'Rua das Flores' })
   @IsString()

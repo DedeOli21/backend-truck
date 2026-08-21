@@ -26,8 +26,8 @@ export class DriverOrmEntity {
   @Column({ type: 'varchar', length: 11, unique: true })
   cpf!: string;
 
-  @Column({ type: 'varchar', length: 11 })
-  pis!: string;
+  @Column({ type: 'varchar', length: 11, nullable: true })
+  pis!: string | null;
 
   @Column({ name: 'address_street', type: 'varchar', length: 255 })
   addressStreet!: string;

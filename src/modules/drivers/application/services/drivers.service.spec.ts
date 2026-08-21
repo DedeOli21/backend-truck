@@ -74,6 +74,18 @@ describe('DriversService', () => {
     await expect(service.create({ ...validPayload(), pis: '12056275310' }, 'admin-1')).rejects.toThrow();
   });
 
+  it('deve criar motorista sem PIS', async () => {
+    const result = await service.create({ ...validPayload(), pis: undefined }, 'admin-1');
+
+    expect(result.pis).toBeNull();
+  });
+
+  it('deve criar motorista com PIS vazio como null', async () => {
+    const result = await service.create({ ...validPayload(), pis: '  ' }, 'admin-1');
+
+    expect(result.pis).toBeNull();
+  });
+
   it('deve rejeitar CPF duplicado', async () => {
     await service.create(validPayload(), 'admin-1');
     await expect(service.create(validPayload(), 'admin-1')).rejects.toThrow();

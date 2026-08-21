@@ -5,7 +5,7 @@ export class DriverEntity {
     public readonly id: string,
     public readonly fullName: string,
     public readonly cpf: string,
-    public readonly pis: string,
+    public readonly pis: string | null,
     public readonly addressStreet: string,
     public readonly addressNumber: string,
     public readonly addressComplement: string | null,
