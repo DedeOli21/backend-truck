@@ -18,6 +18,7 @@
       "@drivers/*": ["src/modules/drivers/*"],
       "@trucks/*": ["src/modules/trucks/*"],
       "@refuelings/*": ["src/modules/refuelings/*"],
+      "@vehicle-expenses/*": ["src/modules/vehicle-expenses/*"],
       "@transactions/*": ["src/modules/transactions/*"],
       "@finance/*": ["src/modules/finance/*"],
       "@payables/*": ["src/modules/payables/*"],

@@ -85,3 +85,10 @@ export enum TruckStatus {
   MANUTENCAO = 'MANUTENCAO',
   INATIVO = 'INATIVO',
 }
+
+export enum VehicleExpenseCategory {
+  BORRACHARIA = 'BORRACHARIA',
+  PEDAGIO = 'PEDAGIO',
+  MANUTENCAO = 'MANUTENCAO',
+  OUTROS = 'OUTROS',
+}
