@@ -110,6 +110,11 @@ export class DriversService {
     return this.toResponse(record);
   }
 
+  async findIdByUserId(userId: string): Promise<string | null> {
+    const found = await this.driversRepository.findByUserId(userId);
+    return found?.driver.id ?? null;
+  }
+
   async list(status?: DriverStatus): Promise<DriverResponse[]> {
     const records = await this.driversRepository.list(status);
     return records.map((record) => this.toResponse(record));

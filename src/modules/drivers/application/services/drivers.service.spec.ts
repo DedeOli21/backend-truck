@@ -174,6 +174,17 @@ describe('DriversService', () => {
     expect(approved.approvedByUserId).toBe('admin-1');
   });
 
+  it('deve encontrar o id do motorista pelo usuario vinculado', async () => {
+    const created = await service.create(validPayload(), 'admin-1');
+    await service.defineDriverAccess(created.id, 'motorista@empresa.com', 'senha123', 'admin-1');
+
+    await expect(service.findIdByUserId('user-driver-1')).resolves.toBe(created.id);
+  });
+
+  it('deve devolver null quando nenhum motorista esta vinculado ao usuario', async () => {
+    await expect(service.findIdByUserId('user-sem-motorista')).resolves.toBeNull();
+  });
+
   it('deve lancar NotFoundException ao definir acesso de motorista inexistente', async () => {
     await expect(
       service.defineDriverAccess('missing-id', 'x@y.com', 'senha123', 'admin-1'),

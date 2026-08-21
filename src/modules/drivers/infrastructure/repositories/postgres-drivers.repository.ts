@@ -40,6 +40,11 @@ export class PostgresDriversRepository implements DriversRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  async findByUserId(userId: string): Promise<DriverWithContacts | null> {
+    const row = await this.driversRepository.findOne({ where: { userId }, relations: ['contacts'] });
+    return row ? this.toDomain(row) : null;
+  }
+
   async findByCpf(cpf: string): Promise<DriverEntity | null> {
     const row = await this.driversRepository.findOne({ where: { cpf } });
     return row ? this.toDomain(row).driver : null;
