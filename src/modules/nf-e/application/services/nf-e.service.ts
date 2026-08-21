@@ -12,6 +12,8 @@ import {
   parseChaveAcesso,
 } from '@nf-e/domain/value-objects/chave-acesso';
 import { CteImportado, parseCteXml } from '@nf-e/domain/value-objects/cte-xml';
+import { DacteExtraido, parseDacteTexto } from '@nf-e/infrastructure/dacte/dacte-parser';
+import { extrairTextoDoPdf } from '@nf-e/infrastructure/dacte/pdf-texto';
 import { OrigemLeitura, extrairChaveDeCodigo } from '@nf-e/domain/value-objects/qr-code';
 import { MOTIVO_NAO_CONFIGURADO } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
 import { ValidarCodigoDto } from '@nf-e/presentation/dtos/validar-codigo.dto';
@@ -153,6 +155,33 @@ export class NfeService {
    */
   importarCteXml(xml: string): CteImportado {
     return parseCteXml(xml);
+  }
+
+  /**
+   * Lê o PDF do DACTE. A chave e o que ela carrega são confiáveis em qualquer
+   * emissor; os demais campos dependem do layout, e os que não forem
+   * encontrados vêm listados em camposNaoEncontrados.
+   */
+  async importarDactePdf(arquivo: Buffer): Promise<DacteExtraido & { sefaz: SefazInfo }> {
+    const texto = await extrairTextoDoPdf(arquivo);
+
+    if (!texto.trim()) {
+      throw new BadRequestException(
+        'O PDF não tem camada de texto. Provavelmente é uma imagem digitalizada, que exigiria OCR.',
+      );
+    }
+
+    let extraido: DacteExtraido;
+
+    try {
+      extraido = parseDacteTexto(texto);
+    } catch (error) {
+      throw new BadRequestException(error instanceof Error ? error.message : String(error));
+    }
+
+    const consulta = await this.comSefaz(parseChaveAcesso(extraido.chave));
+
+    return { ...extraido, sefaz: consulta.sefaz };
   }
 
   async validarCodigo(

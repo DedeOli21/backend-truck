@@ -1,7 +1,21 @@
-import { Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -73,5 +87,31 @@ export class CteController {
   })
   importarXml(@Body() dto: ImportarXmlDto) {
     return this.nfeService.importarCteXml(dto.xml);
+  }
+
+  @Post('importar-pdf')
+  @UseInterceptors(FileInterceptor('arquivo', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { arquivo: { type: 'string', format: 'binary', description: 'PDF do DACTE' } },
+    },
+  })
+  @ApiOperation({
+    summary: 'Importar PDF do DACTE',
+    description:
+      'Lê a camada de texto do PDF. A chave de acesso e o que ela carrega (UF, número, série, emitente) valem para qualquer emissor; os demais campos dependem do layout do software emissor e, quando não encontrados, vêm listados em `camposNaoEncontrados`. PDF digitalizado (imagem) é recusado, pois exigiria OCR. Quando há certificado configurado, a situação do documento vem junto no bloco `sefaz`.',
+  })
+  @ApiOkResponse({ description: 'DACTE interpretado.' })
+  @ApiBadRequestResponse({
+    description: 'PDF ilegível, sem camada de texto ou sem chave de CT-e válida.',
+  })
+  async importarPdf(@UploadedFile() arquivo?: Express.Multer.File) {
+    if (!arquivo) {
+      throw new BadRequestException('Envie o PDF no campo "arquivo".');
+    }
+
+    return this.nfeService.importarDactePdf(arquivo.buffer);
   }
 }
