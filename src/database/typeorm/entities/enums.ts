@@ -73,6 +73,7 @@ export enum DriverPaymentAuditAction {
 }
 
 export enum TruckType {
+  TOCO = 'TOCO',
   TRUCK = 'TRUCK',
   CARRETA = 'CARRETA',
   BITREM = 'BITREM',
