@@ -844,7 +844,7 @@ export class TrucksController {
 }
 ```
 
-Conferir em `src/common/decorators/roles.decorator.ts` se `Roles` aceita múltiplos papéis. Se aceitar apenas um argumento, ajustar a assinatura para `...roles: string[]` e o `RolesGuard` para checar inclusão na lista.
+`Roles` já aceita múltiplos papéis (`(...roles: Array<'ADMIN' | 'DRIVER'>)`) e o `RolesGuard` resolve com `getAllAndOverride`, então o `@Roles('ADMIN', 'DRIVER')` no método sobrepõe o `@Roles('ADMIN')` da classe. Nada a ajustar.
 
 - [ ] **Step 2: Escrever o módulo**
 
@@ -912,6 +912,8 @@ git commit -m "feat(trucks): expoe endpoints REST de veiculos"
 - Modify: `front-end-truck/src/services/fleet/vehicle-service.ts`
 - Modify: `front-end-truck/src/types/fleet.ts`
 - Modify: `front-end-truck/src/services/fleet/seed.ts`
+- Modify: `front-end-truck/src/lib/fleet-schemas.ts`
+- Modify: `front-end-truck/src/pages/AdminBaseOperacional.tsx`
 - Test: `front-end-truck/src/services/fleet/vehicle-service.test.ts`
 
 **Interfaces:**
@@ -967,6 +969,7 @@ describe("vehicleService", () => {
 
     await vehicleService.createVehicle({
       plate: "ABC1D23",
+      brandModel: "Volvo FH 540",
       type: "TRUCK",
       capacity: 14,
       year: 2021,
@@ -975,7 +978,12 @@ describe("vehicleService", () => {
 
     expect(spy).toHaveBeenCalledWith("/trucks", expect.objectContaining({ method: "POST" }));
     const body = JSON.parse((spy.mock.calls[0][1] as RequestInit).body as string);
-    expect(body).toMatchObject({ plate: "ABC1D23", type: "TRUCK", capacity: 14 });
+    expect(body).toMatchObject({
+      plate: "ABC1D23",
+      brandModel: "Volvo FH 540",
+      type: "TRUCK",
+      capacity: 14,
+    });
   });
 });
 ```
@@ -1017,6 +1025,7 @@ const toVehicle = (response: TruckResponse): Vehicle => ({
   plate: response.plate,
   type: response.type,
   capacity: response.capacity,
+  brandModel: response.brandModel,
   year: response.year ?? 0,
   status: response.status,
   createdAt: response.createdAt,
@@ -1025,7 +1034,7 @@ const toVehicle = (response: TruckResponse): Vehicle => ({
 
 const toRequest = (payload: CreateVehiclePayload | UpdateVehiclePayload) => ({
   plate: payload.plate,
-  brandModel: payload.plate ? `${payload.type ?? ""}`.trim() || "Não informado" : undefined,
+  brandModel: payload.brandModel,
   type: payload.type,
   capacity: payload.capacity,
   year: payload.year,
@@ -1065,22 +1074,42 @@ export const vehicleService = {
 };
 ```
 
-Atenção ao `brandModel`: o formulário atual de veículo não tem esse campo. Antes de implementar, decidir com o usuário entre (a) adicionar o campo "Marca/Modelo" ao formulário de `AdminBaseOperacional` — preferível, é informação que o cadastro deveria ter — ou (b) enviar `"Não informado"` como acima. Não deixar a decisão implícita no código.
+O `brandModel` é obrigatório no backend e não existe no formulário atual, então ele entra como campo novo no passo seguinte. `toVehicle` também passa a expor `brandModel` no tipo `Vehicle`.
 
-- [ ] **Step 5: Remover o mock de veículos**
+- [ ] **Step 5: Adicionar "Marca/Modelo" ao formulário de veículo**
+
+Em `front-end-truck/src/lib/fleet-schemas.ts`, dentro de `vehicleFormSchema`, depois de `plate` e removendo `documents`:
+
+```ts
+  brandModel: requiredString("Informe a marca/modelo."),
+```
+
+Em `src/types/fleet.ts`, `Vehicle` ganha `brandModel: string` e perde `documents`.
+
+Em `src/pages/AdminBaseOperacional.tsx`, no `VehicleForm`, ao lado do campo de placa:
+
+```tsx
+        <AdminField label="Marca/Modelo" error={errors.brandModel?.message}>
+          <Input {...register("brandModel")} placeholder="Ex: Volvo FH 540" />
+        </AdminField>
+```
+
+Incluir `brandModel: vehicle?.brandModel || ""` nos `values` do `useForm` e `brandModel: values.brandModel.trim()` no payload de submit. A coluna "Marca/Modelo" também entra na tabela de veículos, ao lado de "Placa".
+
+- [ ] **Step 6: Remover o mock de veículos**
 
 Em `front-end-truck/src/services/fleet/seed.ts`, remover `vehiclesSeed` e o import de `Vehicle` se ficar órfão. Em `src/types/fleet.ts`, remover `documents` de `Vehicle`. Corrigir os usos que quebrarem (`npx tsc --noEmit -p tsconfig.app.json` aponta).
 
-- [ ] **Step 6: Rodar os testes**
+- [ ] **Step 7: Rodar os testes**
 
 Run: `cd front-end-truck && npx vitest run && npx tsc --noEmit -p tsconfig.app.json`
 Expected: testes passando; `tsc` com no máximo os 9 erros pré-existentes da `main`.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 cd front-end-truck
-git add src/services/fleet/vehicle-service.ts src/services/fleet/vehicle-service.test.ts src/types/api.ts src/types/fleet.ts src/services/fleet/seed.ts
+git add src/lib/fleet-schemas.ts src/pages/AdminBaseOperacional.tsx src/services/fleet/vehicle-service.ts src/services/fleet/vehicle-service.test.ts src/types/api.ts src/types/fleet.ts src/services/fleet/seed.ts
 git commit -m "feat(veiculos): consome API real de veiculos"
 ```
 
