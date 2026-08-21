@@ -11,6 +11,11 @@
 **Spec:** `docs/superpowers/specs/2026-08-21-abastecimento-backend-design.md`
 **Leva anterior:** `docs/superpowers/plans/2026-08-21-veiculos-backend.md` (padrões a copiar)
 
+**Status: backend executado e em produção em 2026-08-21; frontend no PR #6.** O que a execução acrescentou:
+
+- Violação de chave estrangeira sobe como `500`. O service passa a conferir o veículo via `TrucksService.findById` antes de gravar, na criação e na edição, devolvendo `404`. Descoberto batendo na API de produção, não nos testes.
+- `RefuelingsModule` importa `TrucksModule` por causa disso.
+
 ## Global Constraints
 
 - Dinheiro em `numeric(n,2)`; litros e preço por litro em `numeric(10,3)`.

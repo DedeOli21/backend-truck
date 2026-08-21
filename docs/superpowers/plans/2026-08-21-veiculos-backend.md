@@ -10,6 +10,12 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-21-abastecimento-backend-design.md`
 
+**Status: executado e em produção em 2026-08-21.** O que a execução mudou em relação ao plano:
+
+- `driver-payments` dependia da FK antiga: `postgres-driver-payments.repository.ts` buscava o caminhão por `trucks.driver_id = driver.userId`. Corrigido para `driver.id`, com a relação inversa migrada de `UserOrmEntity` para `DriverOrmEntity`.
+- A normalização da placa precisou sair do service e ir para um `@Transform` no DTO: `" abc-1d23 "` reprovava no `@Length(7,8)` antes de ser normalizada. O teste unitário não pegou porque chama o service direto; só apareceu ao bater na API.
+- `TruckType` nasceu sem `TOCO`, que o frontend já oferecia. Enum corrigido nos dois lados; o frontend ganhou `BITREM` e `VAN`.
+
 ## Global Constraints
 
 - Dinheiro e medidas decimais em `numeric(n,2)`, nunca centavos em `integer`.
