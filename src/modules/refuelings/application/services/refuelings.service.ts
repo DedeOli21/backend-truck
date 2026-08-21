@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { DriversService } from '@applications/drivers/application/services/drivers.service';
+import { TrucksService } from '@trucks/application/services/trucks.service';
 import { RefuelingEntity } from '@refuelings/domain/entities/refueling.entity';
 import {
   REFUELINGS_REPOSITORY,
@@ -40,6 +41,7 @@ export class RefuelingsService {
   constructor(
     @Inject(REFUELINGS_REPOSITORY) private readonly refuelingsRepository: RefuelingsRepository,
     @Inject(DriversService) private readonly driversService: DriversService,
+    @Inject(TrucksService) private readonly trucksService: TrucksService,
   ) {}
 
   private toResponse(refueling: RefuelingEntity): RefuelingResponse {
@@ -100,6 +102,8 @@ export class RefuelingsService {
   }
 
   async create(dto: CreateRefuelingDto, actor: RefuelingActor): Promise<RefuelingResponse> {
+    // Sem esta checagem a violação de chave estrangeira sobe como 500.
+    await this.trucksService.findById(dto.truckId);
     const driverId = await this.resolveDriverId(actor, dto.driverId);
     const now = new Date();
 
@@ -151,6 +155,10 @@ export class RefuelingsService {
   ): Promise<RefuelingResponse> {
     const current = await this.getOrFail(id);
     await this.assertCanTouch(current, actor);
+
+    if (dto.truckId) {
+      await this.trucksService.findById(dto.truckId);
+    }
 
     const liters = dto.liters ?? current.liters;
     const totalAmount = dto.totalAmount ?? current.totalAmount;

@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { DriversService } from '@applications/drivers/application/services/drivers.service';
+import { TrucksService } from '@trucks/application/services/trucks.service';
 import { RefuelingsService } from '@refuelings/application/services/refuelings.service';
 import { InMemoryRefuelingsRepository } from '@refuelings/infrastructure/repositories/in-memory-refuelings.repository';
 
@@ -31,7 +32,16 @@ describe('RefuelingsService', () => {
       ),
     } as unknown as DriversService;
 
-    service = new RefuelingsService(repository, driversService);
+    const trucksService = {
+      findById: jest.fn(async (id: string) => {
+        if (id !== TRUCK_ID && id !== 'truck-2') {
+          throw new NotFoundException('Veículo não encontrado.');
+        }
+        return { id };
+      }),
+    } as unknown as TrucksService;
+
+    service = new RefuelingsService(repository, driversService, trucksService);
   });
 
   it('admin grava o motorista informado no corpo', async () => {
@@ -123,6 +133,20 @@ describe('RefuelingsService', () => {
     await service.remove(created.id, ADMIN);
 
     expect(await service.list({}, ADMIN)).toHaveLength(0);
+  });
+
+  it('recusa lancamento em veiculo inexistente com NotFound', async () => {
+    await expect(
+      service.create({ ...baseDto, truckId: 'truck-fantasma', driverId: DRIVER_ID }, ADMIN),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('recusa edicao apontando para veiculo inexistente', async () => {
+    const created = await service.create({ ...baseDto, driverId: DRIVER_ID }, ADMIN);
+
+    await expect(
+      service.update(created.id, { truckId: 'truck-fantasma' }, ADMIN),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('lanca NotFound para id inexistente', async () => {
