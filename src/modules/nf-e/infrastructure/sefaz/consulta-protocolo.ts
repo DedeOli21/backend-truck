@@ -23,18 +23,29 @@ export const montarEnvelopeConsulta = (chave: string, tpAmb: 1 | 2): string =>
   `</soap12:Body>` +
   `</soap12:Envelope>`;
 
-const parser = new XMLParser({
+export const parser = new XMLParser({
   ignoreAttributes: true,
   removeNSPrefix: true,
   parseTagValue: false,
 });
 
-// Códigos de retorno da consulta de protocolo (NT 2015/002 e manual da NF-e).
+// Códigos de retorno da consulta de protocolo, iguais para NF-e e CT-e.
 const CANCELADA = new Set([101, 135, 151, 155]);
 const DENEGADA = new Set([110, 301, 302, 303]);
 const INEXISTENTE = new Set([217]);
 
-const buscarRecursivo = (node: unknown, alvo: string): Record<string, unknown> | null => {
+export const situacaoDoStatus = (codigoStatus: number) =>
+  codigoStatus === 100
+    ? ('AUTORIZADA' as const)
+    : CANCELADA.has(codigoStatus)
+      ? ('CANCELADA' as const)
+      : DENEGADA.has(codigoStatus)
+        ? ('DENEGADA' as const)
+        : INEXISTENTE.has(codigoStatus)
+          ? ('INEXISTENTE' as const)
+          : null;
+
+export const buscarRecursivo = (node: unknown, alvo: string): Record<string, unknown> | null => {
   if (!node || typeof node !== 'object') {
     return null;
   }
@@ -54,7 +65,7 @@ const buscarRecursivo = (node: unknown, alvo: string): Record<string, unknown> |
   return null;
 };
 
-const texto = (valor: unknown): string | null =>
+export const texto = (valor: unknown): string | null =>
   valor === undefined || valor === null ? null : String(valor);
 
 export const parseRetornoConsulta = (xml: string): RetornoConsulta => {
@@ -69,16 +80,7 @@ export const parseRetornoConsulta = (xml: string): RetornoConsulta => {
   const motivo = texto(ret.xMotivo) ?? '';
   const infProt = buscarRecursivo(ret, 'infProt');
 
-  const situacao: SituacaoNfe | null =
-    codigoStatus === 100
-      ? 'AUTORIZADA'
-      : CANCELADA.has(codigoStatus)
-        ? 'CANCELADA'
-        : DENEGADA.has(codigoStatus)
-          ? 'DENEGADA'
-          : INEXISTENTE.has(codigoStatus)
-            ? 'INEXISTENTE'
-            : null;
+  const situacao: SituacaoNfe | null = situacaoDoStatus(codigoStatus);
 
   // Qualquer outro cStat é recusa da requisição (UF divergente, chave inválida,
   // certificado sem permissão), não situação do documento.

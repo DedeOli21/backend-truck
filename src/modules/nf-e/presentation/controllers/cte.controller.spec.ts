@@ -1,0 +1,84 @@
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { NfeService } from '@nf-e/application/services/nf-e.service';
+import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
+import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
+import { CteController } from '@nf-e/presentation/controllers/cte.controller';
+import { NfeController } from '@nf-e/presentation/controllers/nf-e.controller';
+
+// Chave real do DACTE de exemplo (CT-e 1147, série 1, emitente 08789863000100).
+const CHAVE_CTE = '35260808789863000100570010000011471000000001';
+// NF-e transportada por esse CT-e, também do DACTE.
+const CHAVE_NFE = '35260855078307000105550010013284551000107765';
+
+describe('CteController (rotas)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [CteController, NfeController],
+      providers: [NfeService, { provide: NFE_PROVIDER, useClass: NotConfiguredNfeProvider }],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('le a chave do CT-e do DACTE real', async () => {
+    const { body } = await request(app.getHttpServer()).get(`/cte/qr/${CHAVE_CTE}`).expect(200);
+
+    expect(body.documento.tipoDocumento).toBe('CTE');
+    expect(body.documento.modelo).toBe(57);
+    expect(body.documento.uf).toBe('SP');
+    expect(body.documento.serie).toBe(1);
+    expect(body.documento.numero).toBe(1147);
+    expect(body.documento.cnpjEmitente).toBe('08789863000100');
+  });
+
+  it('aceita o codigo de barras do DACTE com separadores', async () => {
+    const { body } = await request(app.getHttpServer())
+      .post('/cte/validar')
+      .send({ conteudo: '3526.0808.7898.6300.0100.5700.1000.0011.4710.0000.0001' })
+      .expect(201);
+
+    expect(body.valido).toBe(true);
+    expect(body.documento.numero).toBe(1147);
+  });
+
+  it('aceita a URL do QR Code do CT-e', async () => {
+    const { body } = await request(app.getHttpServer())
+      .post('/cte/validar')
+      .send({
+        conteudo: `https://dfe-portal.svrs.rs.gov.br/cte/qrCode?chCTe=${CHAVE_CTE}&tpAmb=1`,
+      })
+      .expect(201);
+
+    expect(body.origem).toBe('QRCODE');
+    expect(body.documento.tipoDocumento).toBe('CTE');
+  });
+
+  it('recusa chave de NF-e na rota de CT-e, apontando a rota certa', async () => {
+    const { body } = await request(app.getHttpServer()).get(`/cte/qr/${CHAVE_NFE}`).expect(400);
+
+    expect(body.message).toContain('/nf-e');
+  });
+
+  it('recusa chave de CT-e na rota de NF-e, apontando a rota certa', async () => {
+    const { body } = await request(app.getHttpServer()).get(`/nf-e/qr/${CHAVE_CTE}`).expect(400);
+
+    expect(body.message).toContain('/cte');
+  });
+});

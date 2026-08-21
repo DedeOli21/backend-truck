@@ -2,7 +2,19 @@ import { BadRequestException } from '@nestjs/common';
 import { isValidCnpj } from '@drivers/domain/validators/cnpj.validator';
 import { codeToUf } from '@nf-e/domain/validators/uf.validator';
 
-export type TipoDocumentoFiscal = 'NFE' | 'NFCE';
+export type TipoDocumentoFiscal = 'NFE' | 'NFCE' | 'CTE' | 'CTEOS';
+export type FamiliaDocumento = 'NFE' | 'CTE';
+
+// Modelos aceitos e a que família de webservice cada um pertence.
+const MODELOS: Record<number, { tipo: TipoDocumentoFiscal; familia: FamiliaDocumento }> = {
+  55: { tipo: 'NFE', familia: 'NFE' },
+  65: { tipo: 'NFCE', familia: 'NFE' },
+  57: { tipo: 'CTE', familia: 'CTE' },
+  67: { tipo: 'CTEOS', familia: 'CTE' },
+};
+
+export const familiaDoModelo = (modelo: number): FamiliaDocumento | null =>
+  MODELOS[modelo]?.familia ?? null;
 
 export interface ChaveAcesso {
   chave: string;
@@ -13,6 +25,7 @@ export interface ChaveAcesso {
   cnpjEmitente: string;
   modelo: number;
   tipoDocumento: TipoDocumentoFiscal;
+  familia: FamiliaDocumento;
   serie: number;
   numero: number;
   tipoEmissao: number;
@@ -106,10 +119,11 @@ export const parseChaveAcesso = (raw: string): ChaveAcesso => {
   }
 
   const modelo = Number(chave.slice(20, 22));
+  const config = MODELOS[modelo];
 
-  if (modelo !== 55 && modelo !== 65) {
+  if (!config) {
     throw new BadRequestException(
-      `Chave de acesso com modelo não suportado: ${modelo}. Esperado 55 (NF-e) ou 65 (NFC-e).`,
+      `Chave de acesso com modelo não suportado: ${modelo}. Esperado 55 (NF-e), 65 (NFC-e), 57 (CT-e) ou 67 (CT-e OS).`,
     );
   }
 
@@ -121,7 +135,8 @@ export const parseChaveAcesso = (raw: string): ChaveAcesso => {
     mesEmissao,
     cnpjEmitente,
     modelo,
-    tipoDocumento: modelo === 65 ? 'NFCE' : 'NFE',
+    tipoDocumento: config.tipo,
+    familia: config.familia,
     serie: Number(chave.slice(22, 25)),
     numero: Number(chave.slice(25, 34)),
     tipoEmissao: Number(chave.slice(34, 35)),

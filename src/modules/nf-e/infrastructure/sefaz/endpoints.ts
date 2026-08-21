@@ -53,8 +53,44 @@ const ENDPOINTS: Record<string, { producao: string; homologacao: string }> = {
   },
 };
 
-export const endpointConsulta = (uf: string, ambiente: 1 | 2): string => {
-  const config = ENDPOINTS[uf.toUpperCase()] ?? SVRS;
+/** Autorizadores do CT-e (serviço CTeConsultaV4). */
+const SVRS_CTE = {
+  producao: 'https://cte.svrs.rs.gov.br/ws/cteconsulta/CTeConsultaV4.asmx',
+  homologacao: 'https://cte-homologacao.svrs.rs.gov.br/ws/cteconsulta/CTeConsultaV4.asmx',
+};
+
+const ENDPOINTS_CTE: Record<string, { producao: string; homologacao: string }> = {
+  SP: {
+    producao: 'https://nfe.fazenda.sp.gov.br/CTeWS/WS/CTeConsultaV4.asmx',
+    homologacao: 'https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeConsultaV4.asmx',
+  },
+  MG: {
+    producao: 'https://cte.fazenda.mg.gov.br/cte/services/CTeConsultaV4',
+    homologacao: 'https://hcte.fazenda.mg.gov.br/cte/services/CTeConsultaV4',
+  },
+  MS: {
+    producao: 'https://producao.cte.ms.gov.br/ws/CTeConsultaV4',
+    homologacao: 'https://homologacao.cte.ms.gov.br/ws/CTeConsultaV4',
+  },
+  MT: {
+    producao: 'https://cte.sefaz.mt.gov.br/ctews2/services/CTeConsultaV4',
+    homologacao: 'https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeConsultaV4',
+  },
+  PR: {
+    producao: 'https://cte.fazenda.pr.gov.br/cte4/CTeConsultaV4',
+    homologacao: 'https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeConsultaV4',
+  },
+};
+
+export const endpointConsulta = (
+  uf: string,
+  ambiente: 1 | 2,
+  familia: 'NFE' | 'CTE' = 'NFE',
+): string => {
+  const mapa = familia === 'CTE' ? ENDPOINTS_CTE : ENDPOINTS;
+  const padrao = familia === 'CTE' ? SVRS_CTE : SVRS;
+  const config = mapa[uf.toUpperCase()] ?? padrao;
+
   return ambiente === 1 ? config.producao : config.homologacao;
 };
 

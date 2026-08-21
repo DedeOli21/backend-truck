@@ -114,6 +114,7 @@ export async function createConfiguredApp(adapter?: ExpressAdapter) {
         .addTag('Contas a Pagar', 'Contas a pagar e baixa de pagamento')
         .addTag('Pagamentos de Motorista', 'Cálculo, execução e histórico de pagamentos')
         .addTag('NF-e', 'Consulta e validação de NF-e e NFC-e por chave, QR Code ou código de barras')
+        .addTag('CT-e', 'Consulta e validação de CT-e e CT-e OS a partir do DACTE')
         .addTag('Infraestrutura', 'Disponibilidade da API')
         .addBearerAuth(
           {

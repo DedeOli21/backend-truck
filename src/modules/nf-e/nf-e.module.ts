@@ -5,11 +5,12 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
 import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
 import { criarNfeProvider } from '@nf-e/infrastructure/providers/nfe-provider.factory';
+import { CteController } from '@nf-e/presentation/controllers/cte.controller';
 import { NfeController } from '@nf-e/presentation/controllers/nf-e.controller';
 
 @Module({
   imports: [AuthModule],
-  controllers: [NfeController],
+  controllers: [NfeController, CteController],
   providers: [
     NfeService,
     JwtAuthGuard,

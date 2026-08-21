@@ -64,8 +64,26 @@ describe('parseChaveAcesso', () => {
     expect(() => parseChaveAcesso(chave)).toThrow('UF');
   });
 
-  it('rejeita chave com modelo diferente de 55 ou 65', () => {
+  it('identifica CT-e pelo modelo 57', () => {
     const chave = montarChave({ ...partes, modelo: 57 });
+    const parsed = parseChaveAcesso(chave);
+
+    expect(parsed.tipoDocumento).toBe('CTE');
+    expect(parsed.familia).toBe('CTE');
+  });
+
+  it('identifica CT-e OS pelo modelo 67', () => {
+    const chave = montarChave({ ...partes, modelo: 67 });
+    expect(parseChaveAcesso(chave).tipoDocumento).toBe('CTEOS');
+  });
+
+  it('classifica NF-e e NFC-e na familia NFE', () => {
+    expect(parseChaveAcesso(chaveValida).familia).toBe('NFE');
+    expect(parseChaveAcesso(montarChave({ ...partes, modelo: 65 })).familia).toBe('NFE');
+  });
+
+  it('rejeita modelo fora de 55, 65, 57 e 67', () => {
+    const chave = montarChave({ ...partes, modelo: 59 });
     expect(() => parseChaveAcesso(chave)).toThrow('modelo');
   });
 

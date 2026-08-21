@@ -19,4 +19,17 @@ describe('endpointConsulta', () => {
   it('aceita UF em minusculas', () => {
     expect(endpointConsulta('sp', 1)).toBe(endpointConsulta('SP', 1));
   });
+
+  it('usa o servico de CT-e quando a familia e CTE', () => {
+    expect(endpointConsulta('SP', 1, 'CTE')).toContain('CTeWS');
+    expect(endpointConsulta('MG', 1, 'CTE')).toContain('cte.fazenda.mg.gov.br');
+  });
+
+  it('cai na SVRS de CT-e para UF sem autorizador proprio', () => {
+    expect(endpointConsulta('BA', 1, 'CTE')).toContain('cte.svrs.rs.gov.br');
+  });
+
+  it('nao mistura os enderecos de NF-e e CT-e da mesma UF', () => {
+    expect(endpointConsulta('SP', 1, 'CTE')).not.toBe(endpointConsulta('SP', 1, 'NFE'));
+  });
 });

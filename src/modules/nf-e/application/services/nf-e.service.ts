@@ -6,7 +6,11 @@ import {
   SituacaoNfe,
 } from '@nf-e/domain/providers/nfe.provider';
 import { isValidUf } from '@nf-e/domain/validators/uf.validator';
-import { ChaveAcesso, parseChaveAcesso } from '@nf-e/domain/value-objects/chave-acesso';
+import {
+  ChaveAcesso,
+  FamiliaDocumento,
+  parseChaveAcesso,
+} from '@nf-e/domain/value-objects/chave-acesso';
 import { OrigemLeitura, extrairChaveDeCodigo } from '@nf-e/domain/value-objects/qr-code';
 import { MOTIVO_NAO_CONFIGURADO } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
 import { ValidarCodigoDto } from '@nf-e/presentation/dtos/validar-codigo.dto';
@@ -83,8 +87,26 @@ export class NfeService {
     }
   }
 
-  async consultarPorChave(chave: string): Promise<ConsultaNfeResponse> {
-    return this.comSefaz(parseChaveAcesso(chave));
+  /**
+   * Cada rota aceita apenas a sua família de documento: a chave de um CT-e em
+   * /nf-e (ou o contrário) é erro de uso, e a mensagem diz para onde ir.
+   */
+  private exigirFamilia(documento: ChaveAcesso, esperada: FamiliaDocumento): ChaveAcesso {
+    if (documento.familia !== esperada) {
+      const rota = documento.familia === 'CTE' ? '/cte' : '/nf-e';
+      throw new BadRequestException(
+        `Esta chave é de ${documento.tipoDocumento} (modelo ${documento.modelo}). Use as rotas ${rota}.`,
+      );
+    }
+
+    return documento;
+  }
+
+  async consultarPorChave(
+    chave: string,
+    familia: FamiliaDocumento = 'NFE',
+  ): Promise<ConsultaNfeResponse> {
+    return this.comSefaz(this.exigirFamilia(parseChaveAcesso(chave), familia));
   }
 
   async consultarPorUfNumero(uf: string, numero: number): Promise<ConsultaNfeResponse> {
@@ -113,6 +135,7 @@ export class NfeService {
         cnpjEmitente: '',
         modelo: 0,
         tipoDocumento: 'NFE',
+        familia: 'NFE',
         serie: 0,
         numero,
         tipoEmissao: 0,
@@ -123,9 +146,15 @@ export class NfeService {
     };
   }
 
-  async validarCodigo(dto: ValidarCodigoDto): Promise<ValidacaoCodigoResponse> {
+  async validarCodigo(
+    dto: ValidarCodigoDto,
+    familia?: FamiliaDocumento,
+  ): Promise<ValidacaoCodigoResponse> {
     const leitura = extrairChaveDeCodigo(dto.conteudo);
-    const consulta = await this.comSefaz(parseChaveAcesso(leitura.chave));
+    const documento = parseChaveAcesso(leitura.chave);
+    const consulta = await this.comSefaz(
+      familia ? this.exigirFamilia(documento, familia) : documento,
+    );
 
     return { valido: true, origem: leitura.origem, ...consulta };
   }

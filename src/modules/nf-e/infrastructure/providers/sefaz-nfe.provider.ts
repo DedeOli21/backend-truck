@@ -4,6 +4,10 @@ import { Agent, request as httpsRequest } from 'https';
 import { ConsultaSefaz, NfeProvider } from '@nf-e/domain/providers/nfe.provider';
 import { ChaveAcesso } from '@nf-e/domain/value-objects/chave-acesso';
 import {
+  montarEnvelopeConsultaCte,
+  parseRetornoConsultaCte,
+} from '@nf-e/infrastructure/sefaz/consulta-cte';
+import {
   montarEnvelopeConsulta,
   parseRetornoConsulta,
 } from '@nf-e/infrastructure/sefaz/consulta-protocolo';
@@ -93,12 +97,21 @@ export class SefazNfeProvider implements NfeProvider {
   }
 
   async consultarPorChave(documento: ChaveAcesso): Promise<ConsultaSefaz> {
-    const url = this.config.urlOverride ?? endpointConsulta(documento.uf, this.config.ambiente);
-    const envelope = montarEnvelopeConsulta(documento.chave, this.config.ambiente);
+    // CT-e e NF-e têm webservices, envelopes e namespaces distintos.
+    const ehCte = documento.familia === 'CTE';
+    const url =
+      this.config.urlOverride ??
+      endpointConsulta(documento.uf, this.config.ambiente, documento.familia);
+    const envelope = ehCte
+      ? montarEnvelopeConsultaCte(documento.chave, this.config.ambiente)
+      : montarEnvelopeConsulta(documento.chave, this.config.ambiente);
 
-    this.logger.log(`Consultando a SEFAZ (${documento.uf}, ambiente ${this.config.ambiente}).`);
+    this.logger.log(
+      `Consultando a SEFAZ (${documento.tipoDocumento}, ${documento.uf}, ambiente ${this.config.ambiente}).`,
+    );
 
-    const retorno = parseRetornoConsulta(await this.post(url, envelope));
+    const resposta = await this.post(url, envelope);
+    const retorno = ehCte ? parseRetornoConsultaCte(resposta) : parseRetornoConsulta(resposta);
 
     return {
       situacao: retorno.situacao,

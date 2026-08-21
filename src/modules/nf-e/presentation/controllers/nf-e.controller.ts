@@ -45,7 +45,7 @@ export class NfeController {
     description: 'Chave com tamanho, dígito verificador, UF, CNPJ ou modelo inválido.',
   })
   async consultarPorChave(@Param('chave') chave: string) {
-    return this.nfeService.consultarPorChave(chave);
+    return this.nfeService.consultarPorChave(chave, 'NFE');
   }
 
   // Declarada depois de 'qr/:chave': o Nest casa as rotas na ordem de
@@ -79,6 +79,6 @@ export class NfeController {
     description: 'Conteúdo vazio, sem chave de 44 dígitos ou com chave inválida.',
   })
   async validar(@Body() dto: ValidarCodigoDto) {
-    return this.nfeService.validarCodigo(dto);
+    return this.nfeService.validarCodigo(dto, 'NFE');
   }
 }
