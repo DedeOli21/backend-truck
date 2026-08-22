@@ -6,6 +6,8 @@ import { CertificadoPem } from '@nf-e/infrastructure/assinatura/certificado';
  * RSA-SHA1, digest SHA-1 e canonicalização C14N, com Reference apontando para
  * o Id do infCte/infNFe. Qualquer desvio disso é rejeitado na recepção.
  */
+const RAIZ: Record<string, string> = { infCte: 'CTe', infNFe: 'NFe' };
+
 export const assinarXml = (
   xml: string,
   tagAssinada: 'infCte' | 'infNFe',
@@ -30,9 +32,10 @@ export const assinarXml = (
     isEmptyUri: false,
   });
 
-  // A assinatura entra como irmã do bloco assinado, dentro do elemento pai.
+  // A assinatura é o último filho do elemento raiz: no CT-e 4.00 o infCTeSupl,
+  // com o QR Code, fica entre o bloco assinado e a assinatura.
   assinatura.computeSignature(xml, {
-    location: { reference: `//*[local-name(.)='${tagAssinada}']`, action: 'after' },
+    location: { reference: `//*[local-name(.)='${RAIZ[tagAssinada]}']`, action: 'append' },
   });
 
   return assinatura.getSignedXml();

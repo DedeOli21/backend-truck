@@ -78,7 +78,11 @@ const dataCte = (data: Date, uf: string): string => {
   return `${local.toISOString().slice(0, 19)}${offset}`;
 };
 
-const enderecoXml = (tag: string, endereco: EnderecoCte) =>
+/**
+ * O endereço do emitente segue um tipo próprio no XSD e não aceita cPais/xPais;
+ * os demais aceitam, e nessa ordem.
+ */
+const enderecoXml = (tag: string, endereco: EnderecoCte, comPais: boolean) =>
   `<${tag}>` +
   `<xLgr>${escapar(endereco.logradouro)}</xLgr>` +
   `<nro>${escapar(endereco.numero)}</nro>` +
@@ -87,7 +91,7 @@ const enderecoXml = (tag: string, endereco: EnderecoCte) =>
   `<xMun>${escapar(endereco.municipio)}</xMun>` +
   `<CEP>${somenteDigitos(endereco.cep)}</CEP>` +
   `<UF>${endereco.uf}</UF>` +
-  `<cPais>1058</cPais><xPais>BRASIL</xPais>` +
+  (comPais ? `<cPais>1058</cPais><xPais>BRASIL</xPais>` : '') +
   `</${tag}>`;
 
 const participanteXml = (
@@ -106,7 +110,7 @@ const participanteXml = (
       : '') +
     `<xNome>${escapar(participante.nome)}</xNome>` +
     (participante.fone ? `<fone>${somenteDigitos(participante.fone)}</fone>` : '') +
-    enderecoXml(tagEndereco, participante.endereco) +
+    enderecoXml(tagEndereco, participante.endereco, true) +
     `</${tag}>`
   );
 };
@@ -180,7 +184,8 @@ export const gerarCteXml = (dados: DadosCte): CteGerado => {
     `<CNPJ>${somenteDigitos(dados.emitente.cnpjCpf)}</CNPJ>` +
     `<IE>${somenteDigitos(dados.emitente.inscricaoEstadual)}</IE>` +
     `<xNome>${escapar(dados.emitente.nome)}</xNome>` +
-    enderecoXml('enderEmit', dados.emitente.endereco) +
+    enderecoXml('enderEmit', dados.emitente.endereco, false) +
+    `<CRT>${dados.emitente.crt}</CRT>` +
     `</emit>`;
 
   const componentes = dados.componentes
@@ -244,6 +249,14 @@ export const gerarCteXml = (dados: DadosCte): CteGerado => {
       `</infRespTec>`
     : '';
 
+  // O QR Code do DACTE é obrigatório no layout 4.00 e vai em infCTeSupl.
+  const urlQrCode =
+    dados.ambiente === 1
+      ? `https://dfe-portal.svrs.rs.gov.br/cte/qrCode?chCTe=${chave}&tpAmb=1`
+      : `https://dfe-portal.svrs.rs.gov.br/cte/qrCode?chCTe=${chave}&tpAmb=2`;
+
+  const infCTeSupl = `<infCTeSupl><qrCodCTe>${escapar(urlQrCode)}</qrCodCTe></infCTeSupl>`;
+
   const xml =
     `<CTe xmlns="http://www.portalfiscal.inf.br/cte">` +
     `<infCte versao="4.00" Id="${id}">` +
@@ -257,6 +270,7 @@ export const gerarCteXml = (dados: DadosCte): CteGerado => {
     infCTeNorm +
     respTec +
     `</infCte>` +
+    infCTeSupl +
     `</CTe>`;
 
   return { chave, id, xml };
