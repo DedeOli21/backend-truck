@@ -1,6 +1,8 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { Agent, request as httpsRequest } from 'https';
+import { join } from 'path';
+import { rootCertificates } from 'tls';
 import { ConsultaSefaz, NfeProvider } from '@nf-e/domain/providers/nfe.provider';
 import { ChaveAcesso } from '@nf-e/domain/value-objects/chave-acesso';
 import {
@@ -19,7 +21,43 @@ export interface SefazConfig {
   ambiente: 1 | 2;
   urlOverride?: string;
   timeoutMs: number;
+  caPath?: string;
 }
+
+/**
+ * As raízes da ICP-Brasil não estão no armazenamento padrão do Node, que traz
+ * as CAs da Mozilla. Sem elas, o TLS com a SEFAZ falha em
+ * "unable to get local issuer certificate".
+ */
+const RELATIVO = 'modules/nf-e/infrastructure/sefaz/ca/icp-brasil.pem';
+
+export const localizarBundleIcpBrasil = (caPath?: string): string | null => {
+  // O layout do dist muda conforme o rootDir do build, então procura-se em
+  // todos os lugares plausíveis em vez de fixar um caminho.
+  const candidatos = [
+    caPath,
+    join(__dirname, '..', 'sefaz', 'ca', 'icp-brasil.pem'),
+    join(process.cwd(), 'dist', RELATIVO),
+    join(process.cwd(), 'dist', 'src', RELATIVO),
+    join(process.cwd(), 'src', RELATIVO),
+  ].filter((caminho): caminho is string => Boolean(caminho));
+
+  return candidatos.find((caminho) => existsSync(caminho)) ?? null;
+};
+
+const caIcpBrasil = (caPath?: string): string[] => {
+  const caminho = localizarBundleIcpBrasil(caPath);
+
+  if (!caminho) {
+    return [];
+  }
+
+  const conteudo = readFileSync(caminho, 'utf8');
+  return conteudo
+    .split(/(?=-----BEGIN CERTIFICATE-----)/)
+    .map((bloco) => bloco.trim())
+    .filter((bloco) => bloco.startsWith('-----BEGIN CERTIFICATE-----'));
+};
 
 /**
  * Consulta a situação do documento na SEFAZ via NFeConsultaProtocolo4, usando
@@ -44,9 +82,19 @@ export class SefazNfeProvider implements NfeProvider {
   private getAgent(): Agent {
     if (!this.agent) {
       // O .pfx é lido uma vez e mantido em memória; a senha nunca é logada.
+      const icp = caIcpBrasil(this.config.caPath);
+
+      if (icp.length === 0) {
+        this.logger.warn(
+          'Bundle da ICP-Brasil não encontrado: a verificação TLS com a SEFAZ deve falhar.',
+        );
+      }
+
       this.agent = new Agent({
         pfx: readFileSync(this.config.certPath),
         passphrase: this.config.certPassword,
+        // Mantém as CAs padrão para não quebrar nenhum outro destino.
+        ca: [...rootCertificates, ...icp],
         keepAlive: true,
       });
     }

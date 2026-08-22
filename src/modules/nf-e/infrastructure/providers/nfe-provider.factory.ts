@@ -40,5 +40,6 @@ export const criarNfeProvider = (env: NodeJS.ProcessEnv = process.env): NfeProvi
     ambiente,
     urlOverride: env.NFE_CONSULTA_URL?.trim() || undefined,
     timeoutMs: Number(env.NFE_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS,
+    caPath: env.NFE_CA_PATH?.trim() || undefined,
   });
 };
