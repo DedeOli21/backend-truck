@@ -5,12 +5,15 @@ import {
   OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
+  Unique,
 } from 'typeorm';
 import { CnhCategory, DriverStatus, PixKeyType } from '@database/typeorm/entities/enums';
 import { DriverReferenceContactOrmEntity } from '@database/typeorm/entities/driver-reference-contact.orm-entity';
 import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
 
 @Entity({ name: 'drivers' })
+// Único dentro da carteira do gestor, não do banco inteiro.
+@Unique('uq_drivers_owner_cpf', ['ownerUserId', 'cpf'])
 export class DriverOrmEntity {
   @PrimaryColumn('uuid')
   id!: string;
@@ -28,7 +31,7 @@ export class DriverOrmEntity {
   @Column({ name: 'full_name', type: 'varchar', length: 150 })
   fullName!: string;
 
-  @Column({ type: 'varchar', length: 11, unique: true })
+  @Column({ type: 'varchar', length: 11 })
   cpf!: string;
 
   @Column({ type: 'varchar', length: 11, nullable: true })

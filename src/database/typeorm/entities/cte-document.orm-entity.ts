@@ -6,6 +6,7 @@ import {
   ManyToOne,
   PrimaryColumn,
   UpdateDateColumn,
+  Unique,
 } from 'typeorm';
 import { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
 import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
@@ -16,6 +17,8 @@ const numericTransformer = {
 };
 
 @Entity({ name: 'cte_documents' })
+// Único dentro da carteira do gestor, não do banco inteiro.
+@Unique('uq_cte_documents_owner_chave', ['ownerUserId', 'chave'])
 export class CteDocumentOrmEntity {
   @PrimaryColumn('uuid')
   id!: string;
@@ -24,7 +27,7 @@ export class CteDocumentOrmEntity {
   @Column({ name: 'owner_user_id', type: 'uuid' })
   ownerUserId!: string;
 
-  @Column({ type: 'varchar', length: 44, unique: true })
+  @Column({ type: 'varchar', length: 44 })
   chave!: string;
 
   @Column({ type: 'int' })

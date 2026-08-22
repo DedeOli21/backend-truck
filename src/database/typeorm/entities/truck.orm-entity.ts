@@ -7,6 +7,7 @@ import {
   OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
+  Unique,
 } from 'typeorm';
 import { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
 import { TransactionOrmEntity } from '@database/typeorm/entities/transaction.orm-entity';
@@ -18,6 +19,8 @@ const numericTransformer = {
 };
 
 @Entity({ name: 'trucks' })
+// Único dentro da carteira do gestor, não do banco inteiro.
+@Unique('uq_trucks_owner_plate', ['ownerUserId', 'plate'])
 export class TruckOrmEntity {
   @PrimaryColumn('uuid')
   id!: string;
@@ -26,7 +29,7 @@ export class TruckOrmEntity {
   @Column({ name: 'owner_user_id', type: 'uuid' })
   ownerUserId!: string;
 
-  @Column({ type: 'varchar', length: 20, unique: true })
+  @Column({ type: 'varchar', length: 20 })
   plate!: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })

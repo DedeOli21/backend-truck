@@ -12,7 +12,7 @@ export interface DriverWithContacts {
 export interface DriversRepository {
   create(driver: DriverEntity, contacts: DriverReferenceContactEntity[]): Promise<DriverWithContacts>;
   findById(id: string, ownerUserId?: string): Promise<DriverWithContacts | null>;
-  findByCpf(cpf: string): Promise<DriverEntity | null>;
+  findByCpf(cpf: string, ownerUserId?: string): Promise<DriverEntity | null>;
   findByUserId(userId: string): Promise<DriverWithContacts | null>;
   list(status?: DriverStatus, ownerUserId?: string): Promise<DriverWithContacts[]>;
   update(

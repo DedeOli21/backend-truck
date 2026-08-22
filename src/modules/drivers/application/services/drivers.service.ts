@@ -63,7 +63,7 @@ export class DriversService {
   private readonly logger = new Logger(DriversService.name);
 
   async create(dto: CreateDriverDto, actorUserId: string): Promise<DriverResponse> {
-    await this.assertCpfAvailable(dto.cpf);
+    await this.assertCpfAvailable(dto.cpf, actorUserId);
     const pis = this.normalizePis(dto.pis);
     const pixKeyType = this.detectAndValidatePixKey(dto.pixKey);
     await this.assertCepExists(dto.addressZip);
@@ -150,7 +150,7 @@ export class DriversService {
       throw new NotFoundException('Motorista nao encontrado');
     }
 
-    await this.assertCpfAvailable(dto.cpf, id);
+    await this.assertCpfAvailable(dto.cpf, ownerUserId ?? existing.driver.ownerUserId, id);
     const pis = this.normalizePis(dto.pis);
     const pixKeyType = this.detectAndValidatePixKey(dto.pixKey);
     await this.assertCepExists(dto.addressZip);
@@ -248,12 +248,17 @@ export class DriversService {
     return record.driver.cnhImagePath;
   }
 
-  private async assertCpfAvailable(cpf: string, ignoreId?: string): Promise<void> {
+  // O mesmo CPF pode existir na base de outro gestor: a checagem é por carteira.
+  private async assertCpfAvailable(
+    cpf: string,
+    ownerUserId: string,
+    ignoreId?: string,
+  ): Promise<void> {
     if (!isValidCpf(cpf)) {
       throw new BadRequestException('CPF invalido');
     }
 
-    const existing = await this.driversRepository.findByCpf(onlyDigits(cpf));
+    const existing = await this.driversRepository.findByCpf(onlyDigits(cpf), ownerUserId);
     if (existing && existing.id !== ignoreId) {
       throw new ConflictException('Ja existe um motorista cadastrado com este CPF');
     }

@@ -39,8 +39,13 @@ export class InMemoryDriversRepository implements DriversRepository {
     return { driver, contacts: this.contacts.get(driver.id) ?? [] };
   }
 
-  async findByCpf(cpf: string): Promise<DriverEntity | null> {
-    return [...this.drivers.values()].find((driver) => driver.cpf === cpf) ?? null;
+  async findByCpf(cpf: string, ownerUserId?: string): Promise<DriverEntity | null> {
+    return (
+      [...this.drivers.values()].find(
+        (driver) =>
+          driver.cpf === cpf && (!ownerUserId || driver.ownerUserId === ownerUserId),
+      ) ?? null
+    );
   }
 
   async list(status?: DriverStatus, ownerUserId?: string): Promise<DriverWithContacts[]> {
