@@ -23,6 +23,8 @@ import {
   FleetRouteOrmEntity,
   FreightExpenseOrmEntity,
   FreightTimelineEventOrmEntity,
+  FinancialTransactionOrmEntity,
+  InvoiceOrmEntity,
 } from '@database/typeorm/entities';
 
 
@@ -59,6 +61,8 @@ export default new DataSource({
     FleetRouteOrmEntity,
     FreightExpenseOrmEntity,
     FreightTimelineEventOrmEntity,
+    FinancialTransactionOrmEntity,
+    InvoiceOrmEntity,
   ],
   migrations: ['src/database/typeorm/migrations/*.ts', 'dist/database/typeorm/migrations/*.js'],
   synchronize: false,

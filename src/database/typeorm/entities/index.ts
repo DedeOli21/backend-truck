@@ -19,6 +19,8 @@ export { SupplierOrmEntity } from '@database/typeorm/entities/supplier.orm-entit
 export { FleetRouteOrmEntity } from '@database/typeorm/entities/fleet-route.orm-entity';
 export { FreightExpenseOrmEntity } from '@database/typeorm/entities/freight-expense.orm-entity';
 export { FreightTimelineEventOrmEntity } from '@database/typeorm/entities/freight-timeline-event.orm-entity';
+export { FinancialTransactionOrmEntity } from '@database/typeorm/entities/financial-transaction.orm-entity';
+export { InvoiceOrmEntity } from '@database/typeorm/entities/invoice.orm-entity';
 export {
   UserRole,
   TransactionDirection,

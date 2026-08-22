@@ -4,6 +4,7 @@ import { CteDocumentsModule } from '@cte-documents/cte-documents.module';
 import { DriversModule } from '@applications/drivers/drivers.module';
 import { FleetRoutesModule } from '@applications/fleet-routes/fleet-routes.module';
 import { FreightExpensesModule } from '@applications/freight-expenses/freight-expenses.module';
+import { FinancialModule } from '@applications/financial/financial.module';
 import { FreightsModule } from '@freights/freights.module';
 import { RefuelingsModule } from '@refuelings/refuelings.module';
 import { SuppliersModule } from '@applications/suppliers/suppliers.module';
@@ -26,6 +27,7 @@ const MODULOS = [
   ['CteDocumentsModule', CteDocumentsModule],
   ['FreightsModule', FreightsModule],
   ['FreightExpensesModule', FreightExpensesModule],
+  ['FinancialModule', FinancialModule],
 ] as const;
 
 describe('Injeção de dependências dos módulos', () => {

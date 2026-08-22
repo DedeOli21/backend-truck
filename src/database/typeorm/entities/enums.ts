@@ -101,3 +101,13 @@ export enum FreightExpenseType {
   COMISSAO = 'COMISSAO',
   OUTROS = 'OUTROS',
 }
+
+export enum FinancialTransactionType {
+  RECEITA = 'RECEITA',
+  DESPESA = 'DESPESA',
+}
+
+export enum InvoiceStatus {
+  RASCUNHO = 'RASCUNHO',
+  EMITIDA = 'EMITIDA',
+}

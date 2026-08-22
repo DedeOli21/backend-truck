@@ -7,6 +7,8 @@ import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
 import { RefuelingOrmEntity } from '@database/typeorm/entities/refueling.orm-entity';
 import { VehicleExpenseOrmEntity } from '@database/typeorm/entities/vehicle-expense.orm-entity';
 import { CteDocumentOrmEntity } from '@database/typeorm/entities/cte-document.orm-entity';
+import { FinancialTransactionOrmEntity } from '@database/typeorm/entities/financial-transaction.orm-entity';
+import { InvoiceOrmEntity } from '@database/typeorm/entities/invoice.orm-entity';
 import { CustomerOrmEntity } from '@database/typeorm/entities/customer.orm-entity';
 import { SupplierOrmEntity } from '@database/typeorm/entities/supplier.orm-entity';
 import { FleetRouteOrmEntity } from '@database/typeorm/entities/fleet-route.orm-entity';
@@ -58,6 +60,8 @@ const isTest = process.env.NODE_ENV === 'test';
               FleetRouteOrmEntity,
               FreightExpenseOrmEntity,
               FreightTimelineEventOrmEntity,
+              FinancialTransactionOrmEntity,
+              InvoiceOrmEntity,
             ],
             synchronize: false,
             ssl:
