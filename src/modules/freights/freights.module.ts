@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '@applications/auth/auth.module';
 import { CteDocumentsModule } from '@cte-documents/cte-documents.module';
+import { DriversModule } from '@applications/drivers/drivers.module';
 import { FreightOrmEntity } from '@database/typeorm/entities/freight.orm-entity';
 import { FreightTimelineEventOrmEntity } from '@database/typeorm/entities/freight-timeline-event.orm-entity';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -21,6 +22,7 @@ const isTest = process.env.NODE_ENV === 'test';
   imports: [
     AuthModule,
     CteDocumentsModule,
+    DriversModule,
     ...(isTest
       ? []
       : [TypeOrmModule.forFeature([FreightOrmEntity, FreightTimelineEventOrmEntity])]),
