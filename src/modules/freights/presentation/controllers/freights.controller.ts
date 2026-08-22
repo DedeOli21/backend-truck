@@ -33,6 +33,7 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.interface';
 import { DriversService } from '@applications/drivers/application/services/drivers.service';
+import { FreightEntity } from '@freights/domain/entities/freight.entity';
 import { FreightsService } from '@freights/application/services/freights.service';
 import { AlterarStatusDto } from '@freights/presentation/dtos/alterar-status.dto';
 import { AtualizarFreteDto } from '@freights/presentation/dtos/atualizar-frete.dto';
@@ -42,6 +43,9 @@ import { ListarFretesQuery } from '@freights/presentation/dtos/listar-fretes.que
 
 /** Recorte impossível: não casa com nenhum motorista, então a lista volta vazia. */
 const SEM_MOTORISTA = '__sem-motorista__';
+
+/** O dono é recorte interno: não sai na resposta. */
+const semDono = ({ ownerUserId: _ownerUserId, ...frete }: FreightEntity) => frete;
 
 @ApiTags('Fretes')
 @ApiBearerAuth('access-token')
@@ -110,7 +114,7 @@ export class FreightsController {
     @Param('chave') chave: string,
     @Body() dto: CriarFreteDoCteDto,
   ) {
-    return this.freightsService.criarDoCte(chave, dto, await this.escopo(req));
+    return semDono(await this.freightsService.criarDoCte(chave, dto, await this.escopo(req)));
   }
 
   @Post()
@@ -121,7 +125,7 @@ export class FreightsController {
   @ApiCreatedResponse({ description: 'Frete criado.' })
   @ApiBadRequestResponse({ description: 'Dados inválidos.' })
   async criar(@Req() req: AuthenticatedRequest, @Body() dto: CriarFreteDto) {
-    return this.freightsService.criar(dto, await this.escopo(req));
+    return semDono(await this.freightsService.criar(dto, await this.escopo(req)));
   }
 
   @Get()
@@ -133,7 +137,7 @@ export class FreightsController {
   })
   @ApiOkResponse({ description: 'Lista de fretes.' })
   async listar(@Req() req: AuthenticatedRequest, @Query() query: ListarFretesQuery) {
-    return this.freightsService.listar({
+    const fretes = await this.freightsService.listar({
       ownerUserId: await this.escopo(req),
       status: query.status,
       truckId: query.truckId,
@@ -141,6 +145,8 @@ export class FreightsController {
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
     });
+
+    return fretes.map(semDono);
   }
 
   @Get(':id')
@@ -152,7 +158,7 @@ export class FreightsController {
     const frete = await this.freightsService.buscar(id, await this.escopo(req));
     await this.assertMotoristaDoFrete(req, frete.driverId);
 
-    return frete;
+    return semDono(frete);
   }
 
   @Patch(':id')
@@ -165,7 +171,7 @@ export class FreightsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AtualizarFreteDto,
   ) {
-    return this.freightsService.atualizar(id, dto, await this.escopo(req));
+    return semDono(await this.freightsService.atualizar(id, dto, await this.escopo(req)));
   }
 
   @Patch(':id/status')
@@ -188,11 +194,8 @@ export class FreightsController {
     await this.assertMotoristaDoFrete(req, frete.driverId);
 
     // Quem mudou o status assina o evento na timeline do frete.
-    return this.freightsService.alterarStatus(
-      id,
-      dto.status,
-      req.user.sub,
-      escopo,
+    return semDono(
+      await this.freightsService.alterarStatus(id, dto.status, req.user.sub, escopo),
     );
   }
 

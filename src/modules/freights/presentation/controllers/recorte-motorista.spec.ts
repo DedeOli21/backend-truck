@@ -148,6 +148,19 @@ describe('Recorte do motorista nos fretes', () => {
     expect(body.status).toBe('EM_TRANSITO');
   });
 
+  it('a resposta não expõe o dono do frete', async () => {
+    como(GESTOR);
+
+    const { body: lista } = await request(app.getHttpServer()).get('/freights').expect(200);
+    const { body: detalhe } = await request(app.getHttpServer())
+      .get(`/freights/${freteDoUm}`)
+      .expect(200);
+
+    // ownerUserId é recorte interno: vazá-lo entrega o id de outro gestor.
+    expect(lista.every((frete: Record<string, unknown>) => !('ownerUserId' in frete))).toBe(true);
+    expect(detalhe).not.toHaveProperty('ownerUserId');
+  });
+
   it('usuário sem vínculo com motorista nenhum não vê frete algum', async () => {
     como('55555555-5555-4555-8555-555555555555', 'DRIVER');
 
