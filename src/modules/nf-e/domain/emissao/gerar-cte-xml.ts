@@ -94,6 +94,13 @@ const enderecoXml = (tag: string, endereco: EnderecoCte, comPais: boolean) =>
   (comPais ? `<cPais>1058</cPais><xPais>BRASIL</xPais>` : '') +
   `</${tag}>`;
 
+/**
+ * Em homologação a SEFAZ exige esta razão social exata no remetente, para
+ * deixar evidente que o documento não tem valor fiscal (rejeição 646).
+ */
+export const RAZAO_SOCIAL_HOMOLOGACAO =
+  'CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL';
+
 const participanteXml = (
   tag: string,
   participante: ParticipanteCte,
@@ -263,7 +270,13 @@ export const gerarCteXml = (dados: DadosCte): CteGerado => {
     ide +
     infAdic +
     emit +
-    participanteXml('rem', dados.remetente, 'enderReme') +
+    participanteXml(
+      'rem',
+      dados.ambiente === 2
+        ? { ...dados.remetente, nome: RAZAO_SOCIAL_HOMOLOGACAO }
+        : dados.remetente,
+      'enderReme',
+    ) +
     participanteXml('dest', dados.destinatario, 'enderDest') +
     vPrest +
     imp +

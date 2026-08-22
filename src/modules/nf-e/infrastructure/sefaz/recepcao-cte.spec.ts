@@ -1,3 +1,4 @@
+import { gunzipSync } from 'zlib';
 import {
   montarCteProc,
   montarEnvelopeRecepcao,
@@ -11,12 +12,23 @@ const resposta = (miolo: string) =>
   `<soap:Envelope><soap:Body><cteRecepcaoSincResult xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4">${miolo}</cteRecepcaoSincResult></soap:Body></soap:Envelope>`;
 
 describe('montarEnvelopeRecepcao', () => {
-  it('embrulha o CT-e sem repetir a declaracao xml', () => {
-    const envelope = montarEnvelopeRecepcao(CTE);
+  const envelope = montarEnvelopeRecepcao(CTE);
 
+  it('embrulha o CT-e sem repetir a declaracao xml', () => {
     expect(envelope).toContain('cteDadosMsg');
     expect(envelope).toContain('CTeRecepcaoSincV4');
     expect(envelope.match(/<\?xml/g)).toHaveLength(1);
+  });
+
+  it('envia o CT-e comprimido, como o servico sincrono exige', () => {
+    // O XML cru dentro do cteDadosMsg devolve HTTP 400 sem corpo.
+    expect(envelope).not.toContain('<infCte');
+
+    const conteudo = /<cteDadosMsg[^>]*>([\s\S]*?)<\/cteDadosMsg>/.exec(envelope)![1];
+    const descomprimido = gunzipSync(Buffer.from(conteudo, 'base64')).toString('utf8');
+
+    expect(descomprimido).toContain('<infCte');
+    expect(descomprimido).toContain(CHAVE);
   });
 });
 

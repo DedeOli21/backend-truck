@@ -1,3 +1,4 @@
+import { gzipSync } from 'zlib';
 import { SituacaoNfe } from '@nf-e/domain/providers/nfe.provider';
 import { buscarRecursivo, parser, texto } from '@nf-e/infrastructure/sefaz/consulta-protocolo';
 
@@ -13,16 +14,21 @@ export interface RetornoRecepcao {
   protocoloXml: string | null;
 }
 
+/**
+ * O WSDL declara cteDadosMsg como string, não como XML: a recepção síncrona
+ * espera o CT-e comprimido em GZip e codificado em base64. Enviar o XML cru
+ * devolve HTTP 400 sem corpo, sem dizer o motivo.
+ */
 export const montarEnvelopeRecepcao = (cteAssinado: string): string => {
-  // O CTeRecepcaoSinc recebe o CT-e dentro de cteDadosMsg, sem lote.
   const documento = cteAssinado.replace(/<\?xml[^>]*\?>/, '').trim();
+  const comprimido = gzipSync(Buffer.from(documento, 'utf8')).toString('base64');
 
   return (
     `<?xml version="1.0" encoding="UTF-8"?>` +
     `<soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">` +
     `<soap12:Body>` +
     `<cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4">` +
-    documento +
+    comprimido +
     `</cteDadosMsg>` +
     `</soap12:Body>` +
     `</soap12:Envelope>`

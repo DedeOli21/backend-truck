@@ -1,5 +1,10 @@
 import { parseChaveAcesso } from '@nf-e/domain/value-objects/chave-acesso';
-import { DadosCte, gerarCteXml, montarChaveCte } from '@nf-e/domain/emissao/gerar-cte-xml';
+import {
+  DadosCte,
+  RAZAO_SOCIAL_HOMOLOGACAO,
+  gerarCteXml,
+  montarChaveCte,
+} from '@nf-e/domain/emissao/gerar-cte-xml';
 
 // Reproduz o CT-e 1147 do DACTE de exemplo.
 const dados = (): DadosCte => ({
@@ -147,6 +152,19 @@ describe('gerarCteXml', () => {
   it('escapa caracteres especiais da razao social', () => {
     expect(xml).toContain('L&amp;M PACK DISTRIBUIDORA LTDA');
     expect(xml).not.toContain('L&M PACK');
+  });
+
+  it('usa a razao social exigida em homologacao no remetente', () => {
+    // Sem isso a SEFAZ rejeita com cStat 646.
+    expect(xml).toContain(RAZAO_SOCIAL_HOMOLOGACAO);
+    expect(xml).not.toContain('MEIWA INDUSTRIA E COMERCIO LTDA');
+  });
+
+  it('mantem a razao social real em producao', () => {
+    const producao = gerarCteXml({ ...dados(), ambiente: 1 }).xml;
+
+    expect(producao).toContain('MEIWA INDUSTRIA E COMERCIO LTDA');
+    expect(producao).not.toContain(RAZAO_SOCIAL_HOMOLOGACAO);
   });
 
   it('recusa UF de emitente invalida', () => {

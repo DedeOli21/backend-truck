@@ -1,4 +1,5 @@
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import { gunzipSync } from 'zlib';
 import { lerCertificado } from '@nf-e/infrastructure/assinatura/certificado';
 import { EmissorConfig } from '@nf-e/infrastructure/emissao/emissor.config';
 import { InMemoryNumeracaoRepository } from '@nf-e/infrastructure/emissao/in-memory-numeracao.repository';
@@ -28,6 +29,12 @@ const emissor = (): EmissorConfig => ({
     },
   },
 });
+
+/** O envelope leva o CT-e comprimido; para conferir o conteúdo é preciso abrir. */
+const cteDoEnvelope = (envelope: string) => {
+  const conteudo = /<cteDadosMsg[^>]*>([\s\S]*?)<\/cteDadosMsg>/.exec(envelope)![1];
+  return gunzipSync(Buffer.from(conteudo, 'base64')).toString('utf8');
+};
 
 const respostaSefaz = (cStat: number, comProtocolo: boolean) =>
   `<soap:Envelope><soap:Body><retCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>2</tpAmb><cStat>${cStat}</cStat><xMotivo>${
@@ -97,10 +104,12 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
     await criar({ enviar }).emitir({ nfeXml: NFE_XML, valorFrete: 4500 });
 
     const envelope = enviar.mock.calls[0][1];
-    expect(envelope).toContain('<Signature');
-    expect(envelope).toContain('<X509Certificate>');
-    expect(envelope).toContain('<chave>31260836547966000271550030000464521319720980</chave>');
     expect(envelope).toContain('CTeRecepcaoSincV4');
+
+    const cte = cteDoEnvelope(envelope);
+    expect(cte).toContain('<Signature');
+    expect(cte).toContain('<X509Certificate>');
+    expect(cte).toContain('<chave>31260836547966000271550030000464521319720980</chave>');
   });
 
   it('usa CFOP interestadual quando as UFs diferem', async () => {
@@ -109,7 +118,7 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
     );
     await criar({ enviar }).emitir({ nfeXml: NFE_XML, valorFrete: 4500 });
 
-    expect(enviar.mock.calls[0][1]).toContain('<CFOP>6353</CFOP>');
+    expect(cteDoEnvelope(enviar.mock.calls[0][1])).toContain('<CFOP>6353</CFOP>');
   });
 
   it('devolve a rejeicao com o motivo, sem inventar autorizacao', async () => {
@@ -165,8 +174,8 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
       ],
     });
 
-    const envelope = enviar.mock.calls[0][1];
-    expect(envelope).toContain('<xNome>Frete peso</xNome><vComp>3000.00</vComp>');
-    expect(envelope).toContain('<xNome>Pedagio</xNome><vComp>1500.00</vComp>');
+    const cte = cteDoEnvelope(enviar.mock.calls[0][1]);
+    expect(cte).toContain('<xNome>Frete peso</xNome><vComp>3000.00</vComp>');
+    expect(cte).toContain('<xNome>Pedagio</xNome><vComp>1500.00</vComp>');
   });
 });
