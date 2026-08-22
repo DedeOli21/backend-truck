@@ -95,11 +95,15 @@ const enderecoXml = (tag: string, endereco: EnderecoCte, comPais: boolean) =>
   `</${tag}>`;
 
 /**
- * Em homologação a SEFAZ exige esta razão social exata no remetente, para
- * deixar evidente que o documento não tem valor fiscal (rejeição 646).
+ * Em homologação a SEFAZ exige esta razão social exata em remetente e
+ * destinatário, para deixar evidente que o documento não tem valor fiscal
+ * (rejeições 646 e 649).
  */
 export const RAZAO_SOCIAL_HOMOLOGACAO =
   'CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL';
+
+const comRazaoDeTeste = (participante: ParticipanteCte, ambiente: 1 | 2): ParticipanteCte =>
+  ambiente === 2 ? { ...participante, nome: RAZAO_SOCIAL_HOMOLOGACAO } : participante;
 
 const participanteXml = (
   tag: string,
@@ -120,6 +124,54 @@ const participanteXml = (
     enderecoXml(tagEndereco, participante.endereco, true) +
     `</${tag}>`
   );
+};
+
+/**
+ * Quando a prestação começa em UF diferente da do emitente, a SEFAZ exige o
+ * CFOP 5932/6932 e rejeita o 5353/6353 com cStat 524.
+ */
+export const cfopSugerido = (ufEmitente: string, ufInicio: string, ufFim: string): string => {
+  const interestadual = ufInicio !== ufFim;
+
+  if (ufInicio !== ufEmitente) {
+    return interestadual ? '6932' : '5932';
+  }
+
+  return interestadual ? '6353' : '5353';
+};
+
+/** Endereço de consulta do QR Code por UF. Sem autorizador próprio, usa a SVRS. */
+export const urlConsultaQrCode = (uf: string, ambiente: 1 | 2): string => {
+  const porUf: Record<string, { producao: string; homologacao: string }> = {
+    SP: {
+      producao: 'https://nfe.fazenda.sp.gov.br/CTeConsulta/qrCode',
+      homologacao: 'https://homologacao.nfe.fazenda.sp.gov.br/CTeConsulta/qrCode',
+    },
+    MG: {
+      producao: 'https://cte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml',
+      homologacao: 'https://hcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml',
+    },
+    MS: {
+      producao: 'https://www.dfe.ms.gov.br/cte/qrcode',
+      homologacao: 'https://www.dfe.ms.gov.br/cte/qrcode',
+    },
+    MT: {
+      producao: 'https://www.sefaz.mt.gov.br/cte/qrcode',
+      homologacao: 'https://homologacao.sefaz.mt.gov.br/cte/qrcode',
+    },
+    PR: {
+      producao: 'http://www.fazenda.pr.gov.br/cte/qrcode',
+      homologacao: 'http://www.fazenda.pr.gov.br/cte/qrcode',
+    },
+  };
+
+  const svrs = {
+    producao: 'https://dfe-portal.svrs.rs.gov.br/cte/qrCode',
+    homologacao: 'https://dfe-portal.svrs.rs.gov.br/cte/qrCode',
+  };
+
+  const config = porUf[uf.toUpperCase()] ?? svrs;
+  return ambiente === 1 ? config.producao : config.homologacao;
 };
 
 export const montarChaveCte = (dados: DadosCte): string => {
@@ -256,11 +308,9 @@ export const gerarCteXml = (dados: DadosCte): CteGerado => {
       `</infRespTec>`
     : '';
 
-  // O QR Code do DACTE é obrigatório no layout 4.00 e vai em infCTeSupl.
-  const urlQrCode =
-    dados.ambiente === 1
-      ? `https://dfe-portal.svrs.rs.gov.br/cte/qrCode?chCTe=${chave}&tpAmb=1`
-      : `https://dfe-portal.svrs.rs.gov.br/cte/qrCode?chCTe=${chave}&tpAmb=2`;
+  // O QR Code do DACTE é obrigatório no layout 4.00. Cada UF tem o seu
+  // endereço de consulta, e a SEFAZ rejeita o de outra (cStat 851).
+  const urlQrCode = `${urlConsultaQrCode(dados.emitente.endereco.uf, dados.ambiente)}?chCTe=${chave}&tpAmb=${dados.ambiente}`;
 
   const infCTeSupl = `<infCTeSupl><qrCodCTe>${escapar(urlQrCode)}</qrCodCTe></infCTeSupl>`;
 
@@ -270,14 +320,8 @@ export const gerarCteXml = (dados: DadosCte): CteGerado => {
     ide +
     infAdic +
     emit +
-    participanteXml(
-      'rem',
-      dados.ambiente === 2
-        ? { ...dados.remetente, nome: RAZAO_SOCIAL_HOMOLOGACAO }
-        : dados.remetente,
-      'enderReme',
-    ) +
-    participanteXml('dest', dados.destinatario, 'enderDest') +
+    participanteXml('rem', comRazaoDeTeste(dados.remetente, dados.ambiente), 'enderReme') +
+    participanteXml('dest', comRazaoDeTeste(dados.destinatario, dados.ambiente), 'enderDest') +
     vPrest +
     imp +
     infCTeNorm +

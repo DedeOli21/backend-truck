@@ -5,7 +5,7 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { DadosCte, gerarCteXml } from '@nf-e/domain/emissao/gerar-cte-xml';
+import { DadosCte, cfopSugerido, gerarCteXml } from '@nf-e/domain/emissao/gerar-cte-xml';
 import { parseNfeXml } from '@nf-e/domain/value-objects/nfe-xml';
 import { assinarXml } from '@nf-e/infrastructure/assinatura/assinar-xml';
 import { CertificadoPem } from '@nf-e/infrastructure/assinatura/certificado';
@@ -121,7 +121,13 @@ export class EmissaoCteService {
       // Código numérico aleatório, exigido pela SEFAZ para compor a chave.
       codigoNumerico: Math.floor(Math.random() * 99_999_999),
       emitidoEm: new Date(),
-      cfop: dto.cfop ?? (nfe.emitente.uf === nfe.destinatario.uf ? '5353' : '6353'),
+      cfop:
+        dto.cfop ??
+        cfopSugerido(
+          this.emissor.emitente.endereco.uf,
+          nfe.emitente.uf ?? '',
+          nfe.destinatario.uf ?? '',
+        ),
       naturezaOperacao: 'PRESTACAO DE SERVICO DE TRANSPORTE',
       tomador: dto.tomador ?? 3,
       // Início e fim da prestação saem dos municípios da própria NF-e.

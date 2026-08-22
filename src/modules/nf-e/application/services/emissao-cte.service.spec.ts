@@ -112,13 +112,14 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
     expect(cte).toContain('<chave>31260836547966000271550030000464521319720980</chave>');
   });
 
-  it('usa CFOP interestadual quando as UFs diferem', async () => {
+  it('usa 6932 quando a prestacao comeca fora da UF do emitente', async () => {
     const enviar = jest.fn<Promise<string>, [string, string]>(async () =>
       respostaSefaz(100, true),
     );
     await criar({ enviar }).emitir({ nfeXml: NFE_XML, valorFrete: 4500 });
 
-    expect(cteDoEnvelope(enviar.mock.calls[0][1])).toContain('<CFOP>6353</CFOP>');
+    // Emitente em SP, prestação de MG para RJ: a SEFAZ rejeita 6353 (cStat 524).
+    expect(cteDoEnvelope(enviar.mock.calls[0][1])).toContain('<CFOP>6932</CFOP>');
   });
 
   it('devolve a rejeicao com o motivo, sem inventar autorizacao', async () => {

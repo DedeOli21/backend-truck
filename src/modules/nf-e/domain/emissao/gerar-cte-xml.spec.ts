@@ -1,6 +1,7 @@
 import { parseChaveAcesso } from '@nf-e/domain/value-objects/chave-acesso';
 import {
   DadosCte,
+  cfopSugerido,
   RAZAO_SOCIAL_HOMOLOGACAO,
   gerarCteXml,
   montarChaveCte,
@@ -150,21 +151,32 @@ describe('gerarCteXml', () => {
   });
 
   it('escapa caracteres especiais da razao social', () => {
-    expect(xml).toContain('L&amp;M PACK DISTRIBUIDORA LTDA');
-    expect(xml).not.toContain('L&M PACK');
+    const producao = gerarCteXml({ ...dados(), ambiente: 1 }).xml;
+
+    expect(producao).toContain('L&amp;M PACK DISTRIBUIDORA LTDA');
+    expect(producao).not.toContain('<xNome>L&M PACK');
   });
 
-  it('usa a razao social exigida em homologacao no remetente', () => {
-    // Sem isso a SEFAZ rejeita com cStat 646.
-    expect(xml).toContain(RAZAO_SOCIAL_HOMOLOGACAO);
+  it('usa a razao social exigida em homologacao nos dois participantes', () => {
+    // Sem isso a SEFAZ rejeita com cStat 646 (remetente) e 649 (destinatario).
+    expect(xml.match(new RegExp(RAZAO_SOCIAL_HOMOLOGACAO, 'g'))).toHaveLength(2);
     expect(xml).not.toContain('MEIWA INDUSTRIA E COMERCIO LTDA');
+    expect(xml).not.toContain('L&amp;M PACK DISTRIBUIDORA LTDA');
   });
 
-  it('mantem a razao social real em producao', () => {
+  it('mantem as razoes sociais reais em producao', () => {
     const producao = gerarCteXml({ ...dados(), ambiente: 1 }).xml;
 
     expect(producao).toContain('MEIWA INDUSTRIA E COMERCIO LTDA');
+    expect(producao).toContain('L&amp;M PACK DISTRIBUIDORA LTDA');
     expect(producao).not.toContain(RAZAO_SOCIAL_HOMOLOGACAO);
+  });
+
+  it('usa o endereco de QR Code da UF do emitente', () => {
+    // A SEFAZ rejeita QR Code apontando para portal de outra UF (cStat 851).
+    expect(xml).toContain('<qrCodCTe>');
+    expect(xml).toContain('homologacao.nfe.fazenda.sp.gov.br/CTeConsulta/qrCode');
+    expect(xml).toContain('&amp;tpAmb=2');
   });
 
   it('recusa UF de emitente invalida', () => {
@@ -172,5 +184,24 @@ describe('gerarCteXml', () => {
     invalido.emitente.endereco.uf = 'XX';
 
     expect(() => gerarCteXml(invalido)).toThrow('UF');
+  });
+});
+
+describe('cfopSugerido', () => {
+  it('usa 6353 quando a prestacao comeca na UF do emitente e cruza estado', () => {
+    expect(cfopSugerido('SP', 'SP', 'MG')).toBe('6353');
+  });
+
+  it('usa 5353 quando comeca na UF do emitente e nao sai dela', () => {
+    expect(cfopSugerido('SP', 'SP', 'SP')).toBe('5353');
+  });
+
+  it('usa 6932 quando a prestacao comeca em outra UF e cruza estado', () => {
+    // A SEFAZ rejeita 6353 nesse caso com cStat 524.
+    expect(cfopSugerido('SP', 'MG', 'RJ')).toBe('6932');
+  });
+
+  it('usa 5932 quando comeca em outra UF e termina nela mesma', () => {
+    expect(cfopSugerido('SP', 'MG', 'MG')).toBe('5932');
   });
 });
