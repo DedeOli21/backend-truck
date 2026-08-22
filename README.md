@@ -405,3 +405,69 @@ npm run sls:remove
 ## 📄 Licença
 
 Este projeto é privado e de uso exclusivo da AMW Transporte.
+
+## 📄 Módulo fiscal: CT-e e NF-e
+
+### Leitura de documentos
+
+| Rota | O que faz |
+|---|---|
+| `GET /cte/qr/{chave}` | Valida a chave e consulta a situação na SEFAZ |
+| `POST /cte/validar` | Aceita QR Code, código de barras ou chave crua |
+| `POST /cte/importar-chave` | Grava o CT-e com o que a chave carrega |
+| `POST /cte/importar-xml` | Lê o XML completo (fonte exata) |
+| `POST /cte/importar-pdf` | Lê a camada de texto do DACTE |
+| `GET /cte/documentos` | CT-e guardados, com filtros |
+| `PATCH /cte/documentos/{chave}/vinculos` | Vincula a veículo, motorista ou frete |
+
+As mesmas rotas existem em `/nf-e` para NF-e e NFC-e. Cada família aceita só a
+sua: chave de CT-e em `/nf-e` responde 400 apontando a rota certa.
+
+### Confiabilidade por fonte
+
+- **Chave de acesso** — vale em qualquer emissor: é padronizada e conferida por
+  dígito verificador (módulo 11).
+- **XML** — exato. É a fonte de verdade.
+- **PDF do DACTE** — depende do layout do emissor. Os campos não encontrados
+  vêm listados em `camposNaoEncontrados` em vez de sumirem calados. PDF
+  digitalizado é recusado: exigiria OCR.
+
+Reimportar a mesma chave atualiza o registro, preserva os vínculos e nunca
+rebaixa dado de XML com dado de PDF.
+
+### Consulta à SEFAZ
+
+Usa o certificado A1 em TLS mútuo contra `NFeConsultaProtocolo4` (NF-e) e
+`CTeConsultaV4` (CT-e), com os autorizadores por UF.
+
+Configuração no `.env.production` **da VPS** (não versionado):
+
+```env
+NFE_CERT_PATH=/app/certs/nfe-a1.pfx
+NFE_CERT_PASSWORD=<senha do certificado>
+NFE_AMBIENTE=1   # 1 producao, 2 homologacao
+```
+
+O certificado é montado em `/app/certs` por volume somente leitura. Sem essas
+variáveis, a API responde `sefaz.consultado: false` com o motivo — nunca dado
+inventado.
+
+As raízes da ICP-Brasil acompanham o projeto
+(`src/modules/nf-e/infrastructure/sefaz/ca/icp-brasil.pem`): o Node só traz as
+CAs da Mozilla, e sem elas o TLS com a SEFAZ falha em *unable to get local
+issuer certificate*.
+
+### Fretes
+
+`POST /freights/from-cte/{chave}` cria o frete herdando rota, cliente, carga e
+valor do CT-e, e vincula o documento. O ciclo é
+`AGENDADO → EM_TRANSITO → CONCLUIDO`, e sair de agendado exige motorista e
+veículo definidos.
+
+### Atenção no deploy
+
+`deploy_vps_incremental.py` **não** sobrescreve o `.env.production` da VPS — o
+arquivo do servidor é a fonte de verdade porque guarda segredos que não estão no
+repositório. `docker-compose.prod.yml` e a pasta `certs/` também não são
+sincronizados: mudou algum deles, envie manualmente.
+
