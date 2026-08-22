@@ -95,8 +95,8 @@ describe('parseCteXml', () => {
     expect(cte.valorCarga).toBe(39587.01);
     expect(cte.produtoPredominante).toContain('RECIPIENTE/BANDEJA');
     expect(cte.quantidades).toEqual([
-      { tipo: 'PESO BRUTO', quantidade: 1397.55 },
-      { tipo: 'UNIDADE', quantidade: 686 },
+      { tipo: 'PESO BRUTO', quantidade: 1397.55, unidade: 'KG' },
+      { tipo: 'UNIDADE', quantidade: 686, unidade: 'UNIDADE' },
     ]);
   });
 

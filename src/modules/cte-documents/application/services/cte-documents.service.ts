@@ -27,6 +27,38 @@ const extrairQrCode = (xml: string | null | undefined): string | undefined => {
   return conteudo || undefined;
 };
 
+const tagXml = (xml: string, bloco: string, tag: string): string => {
+  const conteudo = new RegExp(`<${bloco}>([\\s\\S]*?)</${bloco}>`).exec(xml)?.[1] ?? '';
+  return new RegExp(`<${tag}>([^<]*)</${tag}>`).exec(conteudo)?.[1]?.trim() ?? '';
+};
+
+/**
+ * Endereço, IE e telefone do emitente ficam em <emit>, que o parse do CT-e não
+ * carrega. Sem eles o DACTE sai com o bloco do emitente pela metade.
+ */
+const extrairEmitente = (xml: string | null | undefined) => {
+  if (!xml) return null;
+
+  const emit = /<emit>([\s\S]*?)<\/emit>/.exec(xml)?.[1];
+  if (!emit) return null;
+
+  const campo = (tag: string) => new RegExp(`<${tag}>([^<]*)</${tag}>`).exec(emit)?.[1]?.trim() ?? '';
+  const numero = tagXml(emit, 'enderEmit', 'nro');
+  const logradouro = tagXml(emit, 'enderEmit', 'xLgr');
+  const cep = tagXml(emit, 'enderEmit', 'CEP');
+
+  return {
+    ie: campo('IE'),
+    telefone: tagXml(emit, 'enderEmit', 'fone'),
+    logradouro: [logradouro, numero].filter(Boolean).join(' '),
+    bairro: tagXml(emit, 'enderEmit', 'xBairro'),
+    cep: cep.replace(/^(\d{5})(\d{3})$/, '$1-$2'),
+    municipio: tagXml(emit, 'enderEmit', 'xMun'),
+    uf: tagXml(emit, 'enderEmit', 'UF'),
+    crt: campo('CRT'),
+  };
+};
+
 const preferir = <T>(novo: T | null | undefined, atual: T | null | undefined): T | null =>
   novo === null || novo === undefined || novo === '' ? (atual ?? null) : novo;
 
@@ -297,18 +329,21 @@ async gerarDacte(chave: string, ownerUserId?: string): Promise<Buffer> {
       try { cteDoXml = parseCteXml(documento.xml); } catch { /* usa só banco */ }
     }
 
+    const doXml = extrairEmitente(documento.xml);
+    const crt = doXml?.crt === '3' ? '3' : doXml?.crt === '2' ? '2' : '1';
+
     const emitente = {
       nome: cteDoXml?.emitente?.nome ?? 'EMITENTE',
       cnpj: documento.cnpjEmitente,
-      ie: 'ISENTO',
+      ie: doXml?.ie || 'ISENTO',
       rntrc: cteDoXml?.rntrc ?? documento.rntrc ?? '',
-      telefone: '',
-      logradouro: '',
-      bairro: '',
-      cep: '',
-      municipio: (documento.origem?.split(' - ')?.[1]) ?? '',
-      uf: documento.uf,
-      crt: '1' as const,
+      telefone: doXml?.telefone ?? '',
+      logradouro: doXml?.logradouro ?? '',
+      bairro: doXml?.bairro ?? '',
+      cep: doXml?.cep ?? '',
+      municipio: doXml?.municipio || (documento.origem?.split(' - ')?.[1]) || '',
+      uf: doXml?.uf || documento.uf,
+      crt: crt as '1' | '2' | '3',
     };
 
     const notasFiscais = (documento.notasFiscais ?? []).map(chaveNf => {
@@ -356,12 +391,12 @@ async gerarDacte(chave: string, ownerUserId?: string): Promise<Buffer> {
       valorCarga: documento.valorCarga ?? 0,
       pesoBruto: documento.pesoBruto ?? 0,
       produtoPredominante: documento.produtoPredominante ?? '',
-      quantidades: [
-        { tipo: 'PESO BRUTO', quantidade: documento.pesoBruto ?? 0, unidade: 'KG' },
-      ],
-      componentes: [
-        { nome: 'Frete valor', valor: documento.valorTotalServico ?? 0 },
-      ],
+      quantidades: cteDoXml?.quantidades?.length
+        ? cteDoXml.quantidades
+        : [{ tipo: 'PESO BRUTO', quantidade: documento.pesoBruto ?? 0, unidade: 'KG' }],
+      componentes: cteDoXml?.componentes?.length
+        ? cteDoXml.componentes
+        : [{ nome: 'Frete valor', valor: documento.valorTotalServico ?? 0 }],
       notasFiscais,
       qrCode: extrairQrCode(documento.xml),
       protocolo: documento.protocolo ?? '',

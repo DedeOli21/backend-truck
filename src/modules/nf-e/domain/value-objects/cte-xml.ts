@@ -22,7 +22,18 @@ export interface ComponenteValor {
 export interface QuantidadeCarga {
   tipo: string;
   quantidade: number;
+  unidade: string;
 }
+
+/** Códigos de unidade de medida da carga (cUnid) do leiaute do CT-e 4.00. */
+const UNIDADES: Record<string, string> = {
+  '00': 'M3',
+  '01': 'KG',
+  '02': 'TON',
+  '03': 'UNIDADE',
+  '04': 'LITROS',
+  '05': 'MMBTU',
+};
 
 export interface CteImportado {
   chave: string;
@@ -147,6 +158,7 @@ export const parseCteXml = (xml: string): CteImportado => {
     quantidades: lista(infCarga.infQ).map((q) => ({
       tipo: texto(q.tpMed) ?? '',
       quantidade: numero(q.qCarga) ?? 0,
+      unidade: UNIDADES[texto(q.cUnid) ?? ''] ?? '',
     })),
     notasFiscais: lista(buscarRecursivo(infCte, 'infDoc')?.infNFe)
       .map((nfe) => texto(nfe.chave) ?? '')
