@@ -136,6 +136,16 @@ describe('gerarCteXml', () => {
     expect(xml).toContain('<chave>35260855078307000105550010013284551000107765</chave>');
   });
 
+  it('limita o produto predominante a 60 caracteres (limite do XSD)', () => {
+    const longa = '802291 LPAI 20L ALBJ V04 MOBIL PRETO :BR N/Ped: 028801/01 - S/Ped: 4510080431';
+    const truncada = gerarCteXml({ ...dados(), produtoPredominante: longa }).xml;
+
+    expect(xml).toContain('<proPred>RECIPIENTE/BANDEJA M-104</proPred>');
+    expect(truncada).toContain(longa.slice(0, 60).trimEnd());
+    expect(truncada).not.toContain('<proPred>' + longa + '</proPred>');
+    expect((truncada.match(/<proPred>.*<\/proPred>/) ?? [''])[0].length).toBeLessThanOrEqual(60 + 18);
+  });
+
   it('usa ICMS do Simples Nacional quando o CRT e 1', () => {
     expect(xml).toContain('<ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN>');
   });

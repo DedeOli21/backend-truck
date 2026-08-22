@@ -5,7 +5,7 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { DadosCte, cfopSugerido, gerarCteXml } from '@nf-e/domain/emissao/gerar-cte-xml';
+import { DadosCte, cfopSugerido, gerarCteXml, MAX_PROD_PRED } from '@nf-e/domain/emissao/gerar-cte-xml';
 import { parseNfeXml } from '@nf-e/domain/value-objects/nfe-xml';
 import { assinarXml } from '@nf-e/infrastructure/assinatura/assinar-xml';
 import { CertificadoPem } from '@nf-e/infrastructure/assinatura/certificado';
@@ -150,7 +150,7 @@ export class EmissaoCteService {
         ? dto.componentes
         : [{ nome: 'Frete valor', valor: dto.valorFrete }],
       valorCarga: nfe.valorTotal ?? 0,
-      produtoPredominante: nfe.itens[0]?.descricao ?? 'CARGA GERAL',
+      produtoPredominante: (nfe.itens[0]?.descricao ?? 'CARGA GERAL').slice(0, MAX_PROD_PRED).trimEnd(),
       pesoBruto: nfe.volumes.pesoBruto ?? nfe.volumes.pesoLiquido ?? 0,
       notas: [{ chave: nfe.chave }],
       observacoes: dto.observacoes ?? null,

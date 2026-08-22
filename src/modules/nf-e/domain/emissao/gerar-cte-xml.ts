@@ -69,6 +69,13 @@ const dec = (valor: number, casas = 2) => valor.toFixed(casas);
 
 const somenteDigitos = (valor: string) => (valor ?? '').replace(/\D/g, '');
 
+/** Limite do campo proPred no XSD do CT-e (TString de até 60 caracteres). */
+export const MAX_PROD_PRED = 60;
+
+/** Garante que um texto caiba no limite do XSD, sem quebrar no meio de um XML. */
+const limitar = (valor: string, tamanho: number) =>
+  valor.length > tamanho ? valor.slice(0, tamanho).trimEnd() : valor;
+
 /** Data no formato exigido: AAAA-MM-DDThh:mm:ssTZD. */
 const dataCte = (data: Date, uf: string): string => {
   // O fuso de Brasília cobre as UFs onde a empresa opera; ajustar aqui se
@@ -286,7 +293,7 @@ export const gerarCteXml = (dados: DadosCte): CteGerado => {
     `<infCTeNorm>` +
     `<infCarga>` +
     `<vCarga>${dec(dados.valorCarga)}</vCarga>` +
-    `<proPred>${escapar(dados.produtoPredominante)}</proPred>` +
+    `<proPred>${escapar(limitar(dados.produtoPredominante, MAX_PROD_PRED))}</proPred>` +
     quantidades +
     `</infCarga>` +
     `<infDoc>${notas}</infDoc>` +
