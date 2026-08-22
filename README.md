@@ -457,6 +457,34 @@ As raízes da ICP-Brasil acompanham o projeto
 CAs da Mozilla, e sem elas o TLS com a SEFAZ falha em *unable to get local
 issuer certificate*.
 
+### Emissão de CT-e
+
+`POST /cte/emitir` recebe o XML da NF-e transportada e o valor do frete, monta o
+CT-e 4.00, assina com o certificado A1 e transmite à SEFAZ pela recepção
+síncrona. Autorizado, guarda o `cteProc` com protocolo; rejeitado, devolve o
+código e o motivo sem gravar nada como válido.
+
+Configuração no `.env.production` **da VPS**:
+
+```env
+CTE_AMBIENTE=2          # 2 homologacao (padrao), 1 producao
+CTE_SERIE=1
+CTE_EMIT_CNPJ=...
+CTE_EMIT_IE=...
+CTE_EMIT_NOME=...
+CTE_EMIT_CRT=1          # 1 e 2 Simples Nacional, 3 regime normal
+CTE_EMIT_RNTRC=...
+CTE_EMIT_LOGRADOURO=... CTE_EMIT_NUMERO=... CTE_EMIT_BAIRRO=...
+CTE_EMIT_MUNICIPIO=...  CTE_EMIT_COD_MUNICIPIO=...  CTE_EMIT_CEP=...  CTE_EMIT_UF=...
+```
+
+A numeração fica em `cte_numeracao`, com sequências separadas por ambiente e
+série. O próximo número é reservado com `UPDATE ... RETURNING`, então duas
+emissões simultâneas nunca recebem o mesmo.
+
+**Homologação não tem valor fiscal.** Trocar para produção é decisão do
+responsável pela empresa, não do código.
+
 ### Fretes
 
 `POST /freights/from-cte/{chave}` cria o frete herdando rota, cliente, carga e
