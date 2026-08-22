@@ -12,17 +12,24 @@ export class InMemoryTrucksRepository implements TrucksRepository {
     return truck;
   }
 
-  async findById(id: string): Promise<TruckEntity | null> {
-    return this.trucks.get(id) ?? null;
+  async findById(id: string, ownerUserId?: string): Promise<TruckEntity | null> {
+    const truck = this.trucks.get(id);
+    return truck && (!ownerUserId || truck.ownerUserId === ownerUserId) ? truck : null;
   }
 
-  async findByPlate(plate: string): Promise<TruckEntity | null> {
-    return [...this.trucks.values()].find((truck) => truck.plate === plate) ?? null;
+  async findByPlate(plate: string, ownerUserId?: string): Promise<TruckEntity | null> {
+    return (
+      [...this.trucks.values()].find(
+        (truck) =>
+          truck.plate === plate && (!ownerUserId || truck.ownerUserId === ownerUserId),
+      ) ?? null
+    );
   }
 
-  async list(status?: TruckStatus): Promise<TruckEntity[]> {
-    const all = [...this.trucks.values()];
-    return status ? all.filter((truck) => truck.status === status) : all;
+  async list(status?: TruckStatus, ownerUserId?: string): Promise<TruckEntity[]> {
+    return [...this.trucks.values()]
+      .filter((truck) => !status || truck.status === status)
+      .filter((truck) => !ownerUserId || truck.ownerUserId === ownerUserId);
   }
 
   async update(id: string, truck: TruckEntity): Promise<TruckEntity> {

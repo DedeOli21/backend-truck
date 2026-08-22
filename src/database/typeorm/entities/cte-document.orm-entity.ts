@@ -20,6 +20,10 @@ export class CteDocumentOrmEntity {
   @PrimaryColumn('uuid')
   id!: string;
 
+  /** Gestor dono do registro. Todo acesso é filtrado por ele. */
+  @Column({ name: 'owner_user_id', type: 'uuid' })
+  ownerUserId!: string;
+
   @Column({ type: 'varchar', length: 44, unique: true })
   chave!: string;
 

@@ -18,6 +18,8 @@ export interface DriverPaymentContext {
 }
 
 export interface DriverPaymentFilters {
+  /** Gestor dono dos pagamentos. Obrigatório: ninguém lista fora do próprio escopo. */
+  ownerUserId?: string;
   driverId?: string;
   plate?: string;
   client?: string;
@@ -29,9 +31,9 @@ export interface DriverPaymentFilters {
 }
 
 export interface DriverPaymentsRepository {
-  resolveDriverContext(driverId: string): Promise<DriverPaymentContext | null>;
+  resolveDriverContext(driverId: string, ownerUserId?: string): Promise<DriverPaymentContext | null>;
   create(payment: DriverPaymentEntity): Promise<DriverPaymentEntity>;
-  findById(id: string): Promise<DriverPaymentEntity | null>;
+  findById(id: string, ownerUserId?: string): Promise<DriverPaymentEntity | null>;
   list(filters: DriverPaymentFilters): Promise<DriverPaymentEntity[]>;
   update(payment: DriverPaymentEntity): Promise<DriverPaymentEntity>;
   markPaid(id: string, paidAt: Date): Promise<DriverPaymentEntity>;

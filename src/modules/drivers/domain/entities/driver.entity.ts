@@ -24,6 +24,8 @@ export class DriverEntity {
     public updatedAt: Date,
     public userId: string | null = null,
     public approvedByUserId: string | null = null,
+    /** Gestor dono do motorista. Define quem enxerga este cadastro. */
+    public ownerUserId: string = '',
   ) {}
 
   isCnhExpired(): boolean {

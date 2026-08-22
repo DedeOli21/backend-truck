@@ -5,6 +5,7 @@ import { RefuelingsService } from '@refuelings/application/services/refuelings.s
 import { InMemoryRefuelingsRepository } from '@refuelings/infrastructure/repositories/in-memory-refuelings.repository';
 
 const ADMIN = { userId: 'user-admin', role: 'ADMIN' as const };
+const GESTOR = ADMIN.userId;
 const DRIVER = { userId: 'user-driver', role: 'DRIVER' as const };
 const SEM_CADASTRO = { userId: 'user-sem-motorista', role: 'DRIVER' as const };
 
@@ -27,6 +28,10 @@ describe('RefuelingsService', () => {
   beforeEach(() => {
     repository = new InMemoryRefuelingsRepository();
     const driversService = {
+      // ADMIN é dono de si; o motorista do teste pertence a esse mesmo gestor.
+      escopoDoUsuario: jest.fn(async (userId: string, role: 'ADMIN' | 'DRIVER') =>
+        role === 'ADMIN' ? userId : GESTOR,
+      ),
       findIdByUserId: jest.fn(async (userId: string) =>
         userId === DRIVER.userId ? DRIVER_ID : null,
       ),

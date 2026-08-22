@@ -14,16 +14,23 @@ export class InMemoryFreightsRepository implements FreightsRepository {
     return freight;
   }
 
-  async findById(id: string): Promise<FreightEntity | null> {
-    return this.fretes.get(id) ?? null;
+  async findById(id: string, ownerUserId?: string): Promise<FreightEntity | null> {
+    const frete = this.fretes.get(id);
+    return frete && (!ownerUserId || frete.ownerUserId === ownerUserId) ? frete : null;
   }
 
-  async findByCodigo(codigo: string): Promise<FreightEntity | null> {
-    return [...this.fretes.values()].find((frete) => frete.codigo === codigo) ?? null;
+  async findByCodigo(codigo: string, ownerUserId?: string): Promise<FreightEntity | null> {
+    return (
+      [...this.fretes.values()].find(
+        (frete) =>
+          frete.codigo === codigo && (!ownerUserId || frete.ownerUserId === ownerUserId),
+      ) ?? null
+    );
   }
 
   async list(filtros: FreightFilters): Promise<FreightEntity[]> {
     return [...this.fretes.values()]
+      .filter((frete) => !filtros.ownerUserId || frete.ownerUserId === filtros.ownerUserId)
       .filter((frete) => !filtros.status || frete.status === filtros.status)
       .filter((frete) => !filtros.truckId || frete.truckId === filtros.truckId)
       .filter((frete) => !filtros.driverId || frete.driverId === filtros.driverId)

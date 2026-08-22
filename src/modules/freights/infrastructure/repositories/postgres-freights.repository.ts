@@ -24,18 +24,26 @@ export class PostgresFreightsRepository implements FreightsRepository {
     return this.toDomain(await this.repository.findOneOrFail({ where: { id: freight.id } }));
   }
 
-  async findById(id: string): Promise<FreightEntity | null> {
-    const row = await this.repository.findOne({ where: { id } });
+  async findById(id: string, ownerUserId?: string): Promise<FreightEntity | null> {
+    const row = await this.repository.findOne({
+      where: ownerUserId ? { id, ownerUserId } : { id },
+    });
     return row ? this.toDomain(row) : null;
   }
 
-  async findByCodigo(codigo: string): Promise<FreightEntity | null> {
-    const row = await this.repository.findOne({ where: { codigo } });
+  async findByCodigo(codigo: string, ownerUserId?: string): Promise<FreightEntity | null> {
+    const row = await this.repository.findOne({
+      where: ownerUserId ? { codigo, ownerUserId } : { codigo },
+    });
     return row ? this.toDomain(row) : null;
   }
 
   async list(filtros: FreightFilters): Promise<FreightEntity[]> {
     const query = this.repository.createQueryBuilder('frete');
+
+    if (filtros.ownerUserId) {
+      query.andWhere('frete.owner_user_id = :ownerUserId', { ownerUserId: filtros.ownerUserId });
+    }
 
     if (filtros.status) query.andWhere('frete.status = :status', { status: filtros.status });
     if (filtros.truckId) query.andWhere('frete.truckId = :truckId', { truckId: filtros.truckId });

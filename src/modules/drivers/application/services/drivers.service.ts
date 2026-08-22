@@ -91,6 +91,10 @@ export class DriversService {
       DriverStatus.EM_ANALISE,
       now,
       now,
+      null,
+      null,
+      // Quem cadastra vira o gestor dono do motorista.
+      actorUserId,
     );
     const contacts = dto.contacts.map(
       (contact) =>
@@ -102,8 +106,8 @@ export class DriversService {
     return this.toResponse(saved);
   }
 
-  async findById(id: string): Promise<DriverResponse> {
-    const record = await this.driversRepository.findById(id);
+  async findById(id: string, ownerUserId?: string): Promise<DriverResponse> {
+    const record = await this.driversRepository.findById(id, ownerUserId);
     if (!record) {
       throw new NotFoundException('Motorista nao encontrado');
     }
@@ -115,13 +119,33 @@ export class DriversService {
     return found?.driver.id ?? null;
   }
 
-  async list(status?: DriverStatus): Promise<DriverResponse[]> {
-    const records = await this.driversRepository.list(status);
+  /**
+   * Gestor dono dos dados que este usuário pode ver.
+   *
+   * ADMIN é dono de si; motorista herda o gestor que o cadastrou. Sem
+   * vínculo não há escopo, e o chamador deve tratar isso como "nada a ver".
+   */
+  async escopoDoUsuario(userId: string, role: 'ADMIN' | 'DRIVER'): Promise<string | null> {
+    if (role === 'ADMIN') {
+      return userId;
+    }
+
+    const found = await this.driversRepository.findByUserId(userId);
+    return found?.driver.ownerUserId ?? null;
+  }
+
+  async list(status?: DriverStatus, ownerUserId?: string): Promise<DriverResponse[]> {
+    const records = await this.driversRepository.list(status, ownerUserId);
     return records.map((record) => this.toResponse(record));
   }
 
-  async update(id: string, dto: UpdateDriverDto, actorUserId: string): Promise<DriverResponse> {
-    const existing = await this.driversRepository.findById(id);
+  async update(
+    id: string,
+    dto: UpdateDriverDto,
+    actorUserId: string,
+    ownerUserId?: string,
+  ): Promise<DriverResponse> {
+    const existing = await this.driversRepository.findById(id, ownerUserId);
     if (!existing) {
       throw new NotFoundException('Motorista nao encontrado');
     }
@@ -163,7 +187,14 @@ export class DriversService {
     return this.toResponse(saved);
   }
 
-  async updateStatus(id: string, status: DriverStatus, actorUserId: string): Promise<DriverResponse> {
+  async updateStatus(
+    id: string,
+    status: DriverStatus,
+    actorUserId: string,
+    ownerUserId?: string,
+  ): Promise<DriverResponse> {
+    // findById com o dono derruba com 404 o motorista de outro gestor.
+    await this.findById(id, ownerUserId);
     const saved = await this.driversRepository.updateStatus(id, status);
     await this.logAction(id, DriverAuditAction.STATUS_CHANGED, actorUserId, this.toResponse(saved));
     return this.toResponse(saved);
@@ -174,8 +205,9 @@ export class DriversService {
     email: string,
     password: string,
     actorUserId: string,
+    ownerUserId?: string,
   ): Promise<DriverResponse> {
-    const record = await this.driversRepository.findById(id);
+    const record = await this.driversRepository.findById(id, ownerUserId);
     if (!record) {
       throw new NotFoundException('Motorista nao encontrado');
     }
@@ -196,14 +228,20 @@ export class DriversService {
     return this.toResponse(saved);
   }
 
-  async saveCnhImagePath(id: string, absolutePath: string, actorUserId: string): Promise<DriverResponse> {
+  async saveCnhImagePath(
+    id: string,
+    absolutePath: string,
+    actorUserId: string,
+    ownerUserId?: string,
+  ): Promise<DriverResponse> {
+    await this.findById(id, ownerUserId);
     const saved = await this.driversRepository.saveCnhImagePath(id, absolutePath);
     await this.logAction(id, DriverAuditAction.UPDATED, actorUserId, { cnhImageUpdated: true, driverId: id });
     return this.toResponse(saved);
   }
 
-  async getCnhImagePath(id: string): Promise<string> {
-    const record = await this.driversRepository.findById(id);
+  async getCnhImagePath(id: string, ownerUserId?: string): Promise<string> {
+    const record = await this.driversRepository.findById(id, ownerUserId);
     if (!record || !record.driver.cnhImagePath) {
       throw new NotFoundException('Imagem da CNH nao cadastrada');
     }

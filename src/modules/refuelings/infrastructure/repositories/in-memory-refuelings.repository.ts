@@ -14,12 +14,14 @@ export class InMemoryRefuelingsRepository implements RefuelingsRepository {
     return refueling;
   }
 
-  async findById(id: string): Promise<RefuelingEntity | null> {
-    return this.refuelings.get(id) ?? null;
+  async findById(id: string, ownerUserId?: string): Promise<RefuelingEntity | null> {
+    const refueling = this.refuelings.get(id) ?? null;
+    return refueling && (!ownerUserId || refueling.ownerUserId === ownerUserId) ? refueling : null;
   }
 
   async list(filters: RefuelingFilters): Promise<RefuelingEntity[]> {
     return [...this.refuelings.values()]
+      .filter((item) => !filters.ownerUserId || item.ownerUserId === filters.ownerUserId)
       .filter((item) => !filters.truckId || item.truckId === filters.truckId)
       .filter((item) => !filters.driverId || item.driverId === filters.driverId)
       .filter((item) => !filters.from || item.refueledAt >= filters.from)

@@ -1,3 +1,6 @@
+import { ExecutionContext } from '@nestjs/common';
+
+const ADMIN_USER = '33333333-3333-4333-8333-333333333333';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -45,7 +48,13 @@ describe('Persistência de CT-e (rotas)', () => {
       ],
     })
       .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
+      // O guard real preenche req.user; aqui simulamos o ADMIN autenticado.
+      .useValue({
+        canActivate: (context: ExecutionContext) => {
+          context.switchToHttp().getRequest().user = { sub: ADMIN_USER, role: 'ADMIN' };
+          return true;
+        },
+      })
       .overrideGuard(RolesGuard)
       .useValue({ canActivate: () => true })
       .compile();

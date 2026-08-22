@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '@applications/auth/auth.module';
+import { DriversModule } from '@applications/drivers/drivers.module';
 import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -13,7 +14,11 @@ import { TrucksController } from '@trucks/presentation/controllers/trucks.contro
 const isTest = process.env.NODE_ENV === 'test';
 
 @Module({
-  imports: [AuthModule, ...(isTest ? [] : [TypeOrmModule.forFeature([TruckOrmEntity])])],
+  imports: [
+    AuthModule,
+    DriversModule,
+    ...(isTest ? [] : [TypeOrmModule.forFeature([TruckOrmEntity])]),
+  ],
   controllers: [TrucksController],
   providers: [
     TrucksService,

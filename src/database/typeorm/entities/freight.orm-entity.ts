@@ -20,6 +20,10 @@ export class FreightOrmEntity {
   @PrimaryColumn('uuid')
   id!: string;
 
+  /** Gestor dono do registro. Todo acesso é filtrado por ele. */
+  @Column({ name: 'owner_user_id', type: 'uuid' })
+  ownerUserId!: string;
+
   @Column({ type: 'varchar', length: 30, unique: true })
   codigo!: string;
 

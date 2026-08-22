@@ -49,8 +49,9 @@ export class DriverPaymentsController {
   @Throttle({ default: { ttl: 60000, limit: 20 } })
   @ApiOperation({ summary: 'Listar pagamentos de motoristas' })
   @ApiOkResponse({ description: 'Lista de pagamentos.' })
-  list(@Query() query: ListDriverPaymentsQueryDto) {
+  list(@Req() req: AuthenticatedRequest, @Query() query: ListDriverPaymentsQueryDto) {
     return this.service.list({
+      ownerUserId: req.user.sub,
       driverId: query.driverId,
       plate: query.plate,
       client: query.client,
@@ -67,16 +68,19 @@ export class DriverPaymentsController {
   @ApiOperation({ summary: 'Buscar contexto do motorista (placa, RNTRC, PIX)' })
   @ApiOkResponse({ description: 'Contexto do motorista, com veículo vinculado quando houver.' })
   @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
-  driverContext(@Param('driverId', ParseUUIDPipe) driverId: string) {
-    return this.service.getDriverContext(driverId);
+  driverContext(
+    @Req() req: AuthenticatedRequest,
+    @Param('driverId', ParseUUIDPipe) driverId: string,
+  ) {
+    return this.service.getDriverContext(driverId, req.user.sub);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Detalhar pagamento de motorista' })
   @ApiOkResponse({ description: 'Pagamento encontrado.' })
   @ApiNotFoundResponse({ description: 'Pagamento não encontrado.' })
-  findById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.service.findById(id);
+  findById(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
+    return this.service.findById(id, req.user.sub);
   }
 
   @Post()
@@ -100,7 +104,7 @@ export class DriverPaymentsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDriverPaymentDto,
   ) {
-    return this.service.update(id, dto, req.user.sub);
+    return this.service.update(id, dto, req.user.sub, req.user.sub);
   }
 
   @Patch(':id/pay')
@@ -109,7 +113,7 @@ export class DriverPaymentsController {
   @ApiOkResponse({ description: 'Pagamento marcado como pago.' })
   @ApiNotFoundResponse({ description: 'Pagamento não encontrado.' })
   pay(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
-    return this.service.markPaid(id, req.user.sub);
+    return this.service.markPaid(id, req.user.sub, req.user.sub);
   }
 
   @Delete(':id')
@@ -119,6 +123,6 @@ export class DriverPaymentsController {
   @ApiNoContentResponse({ description: 'Pagamento excluído.' })
   @ApiNotFoundResponse({ description: 'Pagamento não encontrado.' })
   async remove(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
-    await this.service.remove(id, req.user.sub);
+    await this.service.remove(id, req.user.sub, req.user.sub);
   }
 }

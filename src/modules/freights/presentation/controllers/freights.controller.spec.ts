@@ -1,3 +1,4 @@
+import { DriversService } from '@applications/drivers/application/services/drivers.service';
 import { ExecutionContext } from '@nestjs/common';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -66,6 +67,10 @@ describe('Fluxo CT-e → frete (rotas)', () => {
         { provide: FREIGHTS_REPOSITORY, useClass: InMemoryFreightsRepository },
         { provide: FREIGHT_TIMELINE_REPOSITORY, useClass: InMemoryFreightTimelineRepository },
         { provide: AuthService, useValue: { nomeDoUsuario: async () => 'Administrador' } },
+        {
+          provide: DriversService,
+          useValue: { escopoDoUsuario: async (userId: string) => userId },
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)

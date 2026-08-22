@@ -1,5 +1,6 @@
 export class RefuelingEntity {
   id!: string;
+  ownerUserId!: string;
   truckId!: string;
   driverId!: string;
   liters!: number;

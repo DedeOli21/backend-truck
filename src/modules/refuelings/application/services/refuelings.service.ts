@@ -22,6 +22,9 @@ export interface RefuelingActor {
   role: 'ADMIN' | 'DRIVER';
 }
 
+/** Escopo impossível: não casa com nenhum uuid, então a consulta volta vazia. */
+const SEM_ESCOPO = '__sem-gestor__';
+
 export interface RefuelingResponse {
   id: string;
   truckId: string;
@@ -91,8 +94,17 @@ export class RefuelingsService {
     }
   }
 
-  private async getOrFail(id: string): Promise<RefuelingEntity> {
-    const refueling = await this.refuelingsRepository.findById(id);
+  /**
+   * Gestor dono dos dados que este usuário enxerga: ADMIN é dono de si,
+   * motorista herda o gestor que o cadastrou.
+   */
+  private async escopoDe(actor: RefuelingActor): Promise<string> {
+    const escopo = await this.driversService.escopoDoUsuario(actor.userId, actor.role);
+    return escopo ?? SEM_ESCOPO;
+  }
+
+  private async getOrFail(id: string, ownerUserId?: string): Promise<RefuelingEntity> {
+    const refueling = await this.refuelingsRepository.findById(id, ownerUserId);
 
     if (!refueling) {
       throw new NotFoundException('Abastecimento não encontrado.');
@@ -103,12 +115,15 @@ export class RefuelingsService {
 
   async create(dto: CreateRefuelingDto, actor: RefuelingActor): Promise<RefuelingResponse> {
     // Sem esta checagem a violação de chave estrangeira sobe como 500.
-    await this.trucksService.findById(dto.truckId);
+    const escopo = await this.escopoDe(actor);
+    // O veículo precisa ser da frota do gestor: id de outra frota vira 404.
+    await this.trucksService.findById(dto.truckId, escopo);
     const driverId = await this.resolveDriverId(actor, dto.driverId);
     const now = new Date();
 
     const refueling = new RefuelingEntity({
       id: randomUUID(),
+      ownerUserId: escopo,
       truckId: dto.truckId,
       driverId,
       liters: dto.liters,
@@ -132,6 +147,7 @@ export class RefuelingsService {
         : ((await this.driversService.findIdByUserId(actor.userId)) ?? '__sem-motorista__');
 
     const refuelings = await this.refuelingsRepository.list({
+      ownerUserId: await this.escopoDe(actor),
       truckId: query.truckId,
       driverId,
       from: query.from ? new Date(query.from) : undefined,
@@ -142,7 +158,7 @@ export class RefuelingsService {
   }
 
   async findById(id: string, actor: RefuelingActor): Promise<RefuelingResponse> {
-    const refueling = await this.getOrFail(id);
+    const refueling = await this.getOrFail(id, await this.escopoDe(actor));
     await this.assertCanTouch(refueling, actor);
 
     return this.toResponse(refueling);
@@ -153,11 +169,11 @@ export class RefuelingsService {
     dto: UpdateRefuelingDto,
     actor: RefuelingActor,
   ): Promise<RefuelingResponse> {
-    const current = await this.getOrFail(id);
+    const current = await this.getOrFail(id, await this.escopoDe(actor));
     await this.assertCanTouch(current, actor);
 
     if (dto.truckId) {
-      await this.trucksService.findById(dto.truckId);
+      await this.trucksService.findById(dto.truckId, await this.escopoDe(actor));
     }
 
     const liters = dto.liters ?? current.liters;
@@ -181,7 +197,7 @@ export class RefuelingsService {
   }
 
   async remove(id: string, actor: RefuelingActor): Promise<void> {
-    const refueling = await this.getOrFail(id);
+    const refueling = await this.getOrFail(id, await this.escopoDe(actor));
     await this.assertCanTouch(refueling, actor);
 
     await this.refuelingsRepository.remove(id);

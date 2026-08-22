@@ -5,9 +5,9 @@ export const TRUCKS_REPOSITORY = 'TRUCKS_REPOSITORY';
 
 export interface TrucksRepository {
   create(truck: TruckEntity): Promise<TruckEntity>;
-  findById(id: string): Promise<TruckEntity | null>;
-  findByPlate(plate: string): Promise<TruckEntity | null>;
-  list(status?: TruckStatus): Promise<TruckEntity[]>;
+  findById(id: string, ownerUserId?: string): Promise<TruckEntity | null>;
+  findByPlate(plate: string, ownerUserId?: string): Promise<TruckEntity | null>;
+  list(status?: TruckStatus, ownerUserId?: string): Promise<TruckEntity[]>;
   update(id: string, truck: TruckEntity): Promise<TruckEntity>;
   remove(id: string): Promise<void>;
 }

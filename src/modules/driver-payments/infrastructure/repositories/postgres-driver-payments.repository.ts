@@ -27,8 +27,13 @@ export class PostgresDriverPaymentsRepository implements DriverPaymentsRepositor
     private readonly dataSource: DataSource,
   ) {}
 
-  async resolveDriverContext(driverId: string): Promise<DriverPaymentContext | null> {
-    const driver = await this.driversRepository.findOne({ where: { id: driverId } });
+  async resolveDriverContext(
+    driverId: string,
+    ownerUserId?: string,
+  ): Promise<DriverPaymentContext | null> {
+    const driver = await this.driversRepository.findOne({
+      where: ownerUserId ? { id: driverId, ownerUserId } : { id: driverId },
+    });
     if (!driver) {
       return null;
     }
@@ -56,13 +61,19 @@ export class PostgresDriverPaymentsRepository implements DriverPaymentsRepositor
     return payment;
   }
 
-  async findById(id: string): Promise<DriverPaymentEntity | null> {
-    const row = await this.repository.findOne({ where: { id } });
+  async findById(id: string, ownerUserId?: string): Promise<DriverPaymentEntity | null> {
+    const row = await this.repository.findOne({
+      where: ownerUserId ? { id, ownerUserId } : { id },
+    });
     return row ? this.toDomain(row) : null;
   }
 
   async list(filters: DriverPaymentFilters): Promise<DriverPaymentEntity[]> {
     const qb = this.repository.createQueryBuilder('payment');
+
+    if (filters.ownerUserId) {
+      qb.andWhere('payment.owner_user_id = :ownerUserId', { ownerUserId: filters.ownerUserId });
+    }
 
     if (filters.driverId) {
       qb.andWhere('payment.driver_id = :driverId', { driverId: filters.driverId });
@@ -149,6 +160,7 @@ export class PostgresDriverPaymentsRepository implements DriverPaymentsRepositor
       deliveryDate: payment.deliveryDate.toISOString().slice(0, 10),
       clientName: payment.clientName,
       createdByUserId: payment.createdByUserId,
+      ownerUserId: payment.ownerUserId,
       createdAt: payment.createdAt,
       updatedAt: payment.updatedAt,
     };
@@ -177,6 +189,7 @@ export class PostgresDriverPaymentsRepository implements DriverPaymentsRepositor
       row.createdByUserId,
       row.createdAt,
       row.updatedAt,
+      row.ownerUserId,
     );
   }
 }

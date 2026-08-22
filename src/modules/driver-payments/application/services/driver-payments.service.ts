@@ -70,7 +70,7 @@ export class DriverPaymentsService {
   ) {}
 
   async create(dto: CreateDriverPaymentDto, actorUserId: string): Promise<DriverPaymentResponse> {
-    const context = await this.assertDriverContext(dto.driverId);
+    const context = await this.assertDriverContext(dto.driverId, actorUserId);
     this.assertDatesValid(dto.loadingDate, dto.deliveryDate);
 
     const baseAmount = this.normalizeAmount(dto.baseAmount, 'Valor digitavel');
@@ -102,6 +102,8 @@ export class DriverPaymentsService {
       actorUserId,
       now,
       now,
+      // Quem lança é o gestor dono do pagamento.
+      actorUserId,
     );
 
     const saved = await this.repository.create(payment);
@@ -114,8 +116,8 @@ export class DriverPaymentsService {
     return items.map((item) => this.toResponse(item));
   }
 
-  async findById(id: string): Promise<DriverPaymentResponse> {
-    const payment = await this.repository.findById(id);
+  async findById(id: string, ownerUserId?: string): Promise<DriverPaymentResponse> {
+    const payment = await this.repository.findById(id, ownerUserId);
     if (!payment) {
       throw new NotFoundException('Pagamento nao encontrado');
     }
@@ -126,13 +128,14 @@ export class DriverPaymentsService {
     id: string,
     dto: CreateDriverPaymentDto,
     actorUserId: string,
+    ownerUserId?: string,
   ): Promise<DriverPaymentResponse> {
-    const existing = await this.repository.findById(id);
+    const existing = await this.repository.findById(id, ownerUserId);
     if (!existing) {
       throw new NotFoundException('Pagamento nao encontrado');
     }
 
-    const context = await this.assertDriverContext(dto.driverId);
+    const context = await this.assertDriverContext(dto.driverId, actorUserId);
     this.assertDatesValid(dto.loadingDate, dto.deliveryDate);
 
     const baseAmount = this.normalizeAmount(dto.baseAmount, 'Valor digitavel');
@@ -162,6 +165,7 @@ export class DriverPaymentsService {
       existing.createdByUserId,
       existing.createdAt,
       new Date(),
+      existing.ownerUserId,
     );
 
     const saved = await this.repository.update(payment);
@@ -169,14 +173,20 @@ export class DriverPaymentsService {
     return this.toResponse(saved);
   }
 
-  async markPaid(id: string, actorUserId: string): Promise<DriverPaymentResponse> {
+  async markPaid(
+    id: string,
+    actorUserId: string,
+    ownerUserId?: string,
+  ): Promise<DriverPaymentResponse> {
+    // findById com o dono derruba com 404 o pagamento de outro gestor.
+    await this.findById(id, ownerUserId);
     const saved = await this.repository.markPaid(id, new Date());
     await this.logAction(saved.id, DriverPaymentAuditAction.PAYMENT_EXECUTED, actorUserId, this.toResponse(saved));
     return this.toResponse(saved);
   }
 
-  async remove(id: string, actorUserId: string): Promise<void> {
-    const existing = await this.repository.findById(id);
+  async remove(id: string, actorUserId: string, ownerUserId?: string): Promise<void> {
+    const existing = await this.repository.findById(id, ownerUserId);
     if (!existing) {
       throw new NotFoundException('Pagamento nao encontrado');
     }
@@ -185,12 +195,16 @@ export class DriverPaymentsService {
     await this.logAction(id, DriverPaymentAuditAction.DELETED, actorUserId, snapshot);
   }
 
-  async getDriverContext(driverId: string): Promise<DriverPaymentContext> {
-    return this.assertDriverContext(driverId);
+  async getDriverContext(driverId: string, ownerUserId?: string): Promise<DriverPaymentContext> {
+    return this.assertDriverContext(driverId, ownerUserId);
   }
 
-  private async assertDriverContext(driverId: string): Promise<DriverPaymentContext> {
-    const context = await this.repository.resolveDriverContext(driverId);
+  private async assertDriverContext(
+    driverId: string,
+    ownerUserId?: string,
+  ): Promise<DriverPaymentContext> {
+    // Motorista de outro gestor não é encontrado.
+    const context = await this.repository.resolveDriverContext(driverId, ownerUserId);
     if (!context) {
       throw new NotFoundException('Motorista nao encontrado');
     }

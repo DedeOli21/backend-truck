@@ -15,6 +15,10 @@ export class DriverOrmEntity {
   @PrimaryColumn('uuid')
   id!: string;
 
+  /** Gestor dono do registro. Todo acesso é filtrado por ele. */
+  @Column({ name: 'owner_user_id', type: 'uuid' })
+  ownerUserId!: string;
+
   @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId!: string | null;
 

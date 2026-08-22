@@ -14,12 +14,14 @@ export class InMemoryVehicleExpensesRepository implements VehicleExpensesReposit
     return expense;
   }
 
-  async findById(id: string): Promise<VehicleExpenseEntity | null> {
-    return this.expenses.get(id) ?? null;
+  async findById(id: string, ownerUserId?: string): Promise<VehicleExpenseEntity | null> {
+    const expense = this.expenses.get(id) ?? null;
+    return expense && (!ownerUserId || expense.ownerUserId === ownerUserId) ? expense : null;
   }
 
   async list(filters: VehicleExpenseFilters): Promise<VehicleExpenseEntity[]> {
     return [...this.expenses.values()]
+      .filter((item) => !filters.ownerUserId || item.ownerUserId === filters.ownerUserId)
       .filter((item) => !filters.truckId || item.truckId === filters.truckId)
       .filter((item) => !filters.driverId || item.driverId === filters.driverId)
       .filter((item) => !filters.category || item.category === filters.category)

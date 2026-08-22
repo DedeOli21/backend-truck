@@ -16,6 +16,7 @@ export class PostgresTrucksRepository implements TrucksRepository {
   private toDomain(row: TruckOrmEntity): TruckEntity {
     return new TruckEntity({
       id: row.id,
+      ownerUserId: row.ownerUserId,
       plate: row.plate,
       rntrc: row.rntrc,
       brandModel: row.brandModel,
@@ -32,6 +33,7 @@ export class PostgresTrucksRepository implements TrucksRepository {
   async create(truck: TruckEntity): Promise<TruckEntity> {
     const row = this.repository.create({
       id: truck.id,
+      ownerUserId: truck.ownerUserId,
       plate: truck.plate,
       rntrc: truck.rntrc,
       brandModel: truck.brandModel,
@@ -45,19 +47,26 @@ export class PostgresTrucksRepository implements TrucksRepository {
     return this.toDomain(await this.repository.save(row));
   }
 
-  async findById(id: string): Promise<TruckEntity | null> {
-    const row = await this.repository.findOne({ where: { id } });
+  async findById(id: string, ownerUserId?: string): Promise<TruckEntity | null> {
+    const row = await this.repository.findOne({
+      where: ownerUserId ? { id, ownerUserId } : { id },
+    });
     return row ? this.toDomain(row) : null;
   }
 
-  async findByPlate(plate: string): Promise<TruckEntity | null> {
-    const row = await this.repository.findOne({ where: { plate } });
+  async findByPlate(plate: string, ownerUserId?: string): Promise<TruckEntity | null> {
+    const row = await this.repository.findOne({
+      where: ownerUserId ? { plate, ownerUserId } : { plate },
+    });
     return row ? this.toDomain(row) : null;
   }
 
-  async list(status?: TruckStatus): Promise<TruckEntity[]> {
+  async list(status?: TruckStatus, ownerUserId?: string): Promise<TruckEntity[]> {
     const rows = await this.repository.find({
-      where: status ? { status } : {},
+      where: {
+        ...(status ? { status } : {}),
+        ...(ownerUserId ? { ownerUserId } : {}),
+      },
       order: { plate: 'ASC' },
     });
 

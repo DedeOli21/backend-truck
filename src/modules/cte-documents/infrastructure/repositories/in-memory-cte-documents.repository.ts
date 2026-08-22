@@ -14,12 +14,17 @@ export class InMemoryCteDocumentsRepository implements CteDocumentsRepository {
     return documento;
   }
 
-  async findByChave(chave: string): Promise<CteDocumentEntity | null> {
-    return [...this.documentos.values()].find((item) => item.chave === chave) ?? null;
+  async findByChave(chave: string, ownerUserId?: string): Promise<CteDocumentEntity | null> {
+    return (
+      [...this.documentos.values()].find(
+        (item) => item.chave === chave && (!ownerUserId || item.ownerUserId === ownerUserId),
+      ) ?? null
+    );
   }
 
   async list(filtros: CteDocumentFilters): Promise<CteDocumentEntity[]> {
     return [...this.documentos.values()]
+      .filter((item) => !filtros.ownerUserId || item.ownerUserId === filtros.ownerUserId)
       .filter((item) => !filtros.truckId || item.truckId === filtros.truckId)
       .filter((item) => !filtros.driverId || item.driverId === filtros.driverId)
       .filter((item) => !filtros.freightId || item.freightId === filtros.freightId)

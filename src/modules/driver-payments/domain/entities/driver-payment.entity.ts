@@ -27,5 +27,7 @@ export class DriverPaymentEntity {
     public readonly createdByUserId: string,
     public readonly createdAt: Date,
     public updatedAt: Date,
+    /** Gestor dono do pagamento. Define quem enxerga o lançamento. */
+    public readonly ownerUserId: string = '',
   ) {}
 }

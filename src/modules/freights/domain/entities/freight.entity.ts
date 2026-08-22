@@ -9,6 +9,7 @@ export const FREIGHT_STATUS: FreightStatus[] = [
 
 export class FreightEntity {
   id!: string;
+  ownerUserId!: string;
   codigo!: string;
   origem!: string;
   destino!: string;

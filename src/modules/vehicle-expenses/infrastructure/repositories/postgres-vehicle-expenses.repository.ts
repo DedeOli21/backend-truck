@@ -18,6 +18,7 @@ export class PostgresVehicleExpensesRepository implements VehicleExpensesReposit
   private toDomain(row: VehicleExpenseOrmEntity): VehicleExpenseEntity {
     return new VehicleExpenseEntity({
       id: row.id,
+      ownerUserId: row.ownerUserId,
       truckId: row.truckId,
       driverId: row.driverId,
       category: row.category,
@@ -31,6 +32,7 @@ export class PostgresVehicleExpensesRepository implements VehicleExpensesReposit
 
   private toRow(expense: VehicleExpenseEntity) {
     return {
+      ownerUserId: expense.ownerUserId,
       truckId: expense.truckId,
       driverId: expense.driverId,
       category: expense.category,
@@ -45,13 +47,19 @@ export class PostgresVehicleExpensesRepository implements VehicleExpensesReposit
     return this.toDomain(await this.repository.save(row));
   }
 
-  async findById(id: string): Promise<VehicleExpenseEntity | null> {
-    const row = await this.repository.findOne({ where: { id } });
+  async findById(id: string, ownerUserId?: string): Promise<VehicleExpenseEntity | null> {
+    const row = await this.repository.findOne({
+      where: ownerUserId ? { id, ownerUserId } : { id },
+    });
     return row ? this.toDomain(row) : null;
   }
 
   async list(filters: VehicleExpenseFilters): Promise<VehicleExpenseEntity[]> {
     const query = this.repository.createQueryBuilder('expense');
+
+    if (filters.ownerUserId) {
+      query.andWhere('expense.owner_user_id = :ownerUserId', { ownerUserId: filters.ownerUserId });
+    }
 
     if (filters.truckId) {
       query.andWhere('expense.truckId = :truckId', { truckId: filters.truckId });

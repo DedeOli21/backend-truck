@@ -35,8 +35,11 @@ export class PostgresDriversRepository implements DriversRepository {
     return this.mustFindById(driver.id);
   }
 
-  async findById(id: string): Promise<DriverWithContacts | null> {
-    const row = await this.driversRepository.findOne({ where: { id }, relations: ['contacts'] });
+  async findById(id: string, ownerUserId?: string): Promise<DriverWithContacts | null> {
+    const row = await this.driversRepository.findOne({
+      where: ownerUserId ? { id, ownerUserId } : { id },
+      relations: ['contacts'],
+    });
     return row ? this.toDomain(row) : null;
   }
 
@@ -50,9 +53,12 @@ export class PostgresDriversRepository implements DriversRepository {
     return row ? this.toDomain(row).driver : null;
   }
 
-  async list(status?: DriverStatus): Promise<DriverWithContacts[]> {
+  async list(status?: DriverStatus, ownerUserId?: string): Promise<DriverWithContacts[]> {
     const rows = await this.driversRepository.find({
-      where: status ? { status } : {},
+      where: {
+        ...(status ? { status } : {}),
+        ...(ownerUserId ? { ownerUserId } : {}),
+      },
       relations: ['contacts'],
       order: { createdAt: 'DESC' },
     });
@@ -125,6 +131,7 @@ export class PostgresDriversRepository implements DriversRepository {
       id: driver.id,
       userId: driver.userId,
       approvedByUserId: driver.approvedByUserId,
+      ownerUserId: driver.ownerUserId,
       fullName: driver.fullName,
       cpf: driver.cpf,
       pis: driver.pis,
@@ -181,6 +188,7 @@ export class PostgresDriversRepository implements DriversRepository {
       row.updatedAt,
       row.userId,
       row.approvedByUserId,
+      row.ownerUserId,
     );
     const contacts = (row.contacts ?? []).map(
       (contact) =>

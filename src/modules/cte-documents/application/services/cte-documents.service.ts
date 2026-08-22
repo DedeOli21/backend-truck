@@ -32,10 +32,12 @@ export class CteDocumentsService {
   private async upsert(
     chave: string,
     origemLeitura: OrigemLeituraCte,
+    ownerUserId: string,
     campos: Partial<CteDocumentEntity>,
   ): Promise<CteDocumentEntity> {
     const documento = parseChaveAcesso(chave);
-    const atual = await this.repository.findByChave(chave);
+    // Documento de outro gestor não é encontrado: a releitura cria o dele.
+    const atual = await this.repository.findByChave(chave, ownerUserId);
     const agora = new Date();
 
     // XML é a fonte exata; PDF é heurístico. Uma leitura de PDF nunca substitui
@@ -88,6 +90,7 @@ export class CteDocumentsService {
       ambiente: mesclar('ambiente'),
       xml: mesclar('xml'),
       motivoRejeicao: campos.motivoRejeicao ?? atual?.motivoRejeicao ?? null,
+      ownerUserId,
       truckId: atual?.truckId ?? null,
       driverId: atual?.driverId ?? null,
       freightId: atual?.freightId ?? null,
@@ -98,8 +101,8 @@ export class CteDocumentsService {
     return this.repository.save(entidade);
   }
 
-  async salvarDoXml(cte: CteImportado): Promise<CteDocumentEntity> {
-    return this.upsert(cte.chave, 'XML', {
+  async salvarDoXml(cte: CteImportado, ownerUserId: string): Promise<CteDocumentEntity> {
+    return this.upsert(cte.chave, 'XML', ownerUserId, {
       emitidoEm: data(cte.emitidoEm),
       cfop: cte.cfop,
       naturezaOperacao: cte.naturezaOperacao,
@@ -124,8 +127,12 @@ export class CteDocumentsService {
     });
   }
 
-  async salvarDoPdf(dacte: DacteExtraido, situacao?: string | null): Promise<CteDocumentEntity> {
-    return this.upsert(dacte.chave, 'PDF', {
+  async salvarDoPdf(
+    dacte: DacteExtraido,
+    ownerUserId: string,
+    situacao?: string | null,
+  ): Promise<CteDocumentEntity> {
+    return this.upsert(dacte.chave, 'PDF', ownerUserId, {
       emitidoEm: null,
       cfop: dacte.cfop,
       naturezaOperacao: dacte.naturezaOperacao,
@@ -155,13 +162,18 @@ export class CteDocumentsService {
    * barras. Só há o que a chave carrega; o conteúdo chega depois, quando o XML
    * ou o PDF forem importados — e aí não sobrescreve o que já existe.
    */
-  async salvarDaChave(chave: string, situacao?: string | null): Promise<CteDocumentEntity> {
-    return this.upsert(chave, 'CHAVE', { situacao: situacao ?? null });
+  async salvarDaChave(
+    chave: string,
+    ownerUserId: string,
+    situacao?: string | null,
+  ): Promise<CteDocumentEntity> {
+    return this.upsert(chave, 'CHAVE', ownerUserId, { situacao: situacao ?? null });
   }
 
   /** Guarda o CT-e que nós mesmos emitimos, já autorizado pela SEFAZ. */
   async salvarEmitido(dados: {
     chave: string;
+    ownerUserId: string;
     ambiente: number;
     protocolo: string | null;
     autorizadoEm: string | null;
@@ -171,7 +183,7 @@ export class CteDocumentsService {
     driverId: string | null;
     valorTotalServico: number;
   }): Promise<CteDocumentEntity> {
-    const salvo = await this.upsert(dados.chave, 'XML', {
+    const salvo = await this.upsert(dados.chave, 'XML', dados.ownerUserId, {
       protocolo: dados.protocolo,
       autorizadoEm: data(dados.autorizadoEm),
       situacao: 'AUTORIZADA',
@@ -185,14 +197,18 @@ export class CteDocumentsService {
     });
 
     if (dados.truckId || dados.driverId) {
-      return this.vincular(dados.chave, { truckId: dados.truckId, driverId: dados.driverId });
+      return this.vincular(
+        dados.chave,
+        { truckId: dados.truckId, driverId: dados.driverId },
+        dados.ownerUserId,
+      );
     }
 
     return salvo;
   }
 
-  async buscarPorChave(chave: string): Promise<CteDocumentEntity> {
-    const documento = await this.repository.findByChave(chave);
+  async buscarPorChave(chave: string, ownerUserId?: string): Promise<CteDocumentEntity> {
+    const documento = await this.repository.findByChave(chave, ownerUserId);
 
     if (!documento) {
       throw new NotFoundException('CT-e não encontrado. Importe o XML ou o PDF primeiro.');
@@ -205,8 +221,12 @@ export class CteDocumentsService {
     return this.repository.list(filtros);
   }
 
-  async vincular(chave: string, vinculo: VinculoCte): Promise<CteDocumentEntity> {
-    const documento = await this.buscarPorChave(chave);
+  async vincular(
+    chave: string,
+    vinculo: VinculoCte,
+    ownerUserId?: string,
+  ): Promise<CteDocumentEntity> {
+    const documento = await this.buscarPorChave(chave, ownerUserId);
 
     return this.repository.save(
       new CteDocumentEntity({
@@ -219,8 +239,8 @@ export class CteDocumentsService {
     );
   }
 
-  async remover(chave: string): Promise<void> {
-    const documento = await this.buscarPorChave(chave);
+  async remover(chave: string, ownerUserId?: string): Promise<void> {
+    const documento = await this.buscarPorChave(chave, ownerUserId);
     await this.repository.remove(documento.id);
   }
 }

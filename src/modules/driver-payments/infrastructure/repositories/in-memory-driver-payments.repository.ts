@@ -25,8 +25,9 @@ export class InMemoryDriverPaymentsRepository implements DriverPaymentsRepositor
     return payment;
   }
 
-  async findById(id: string): Promise<DriverPaymentEntity | null> {
-    return this.store.get(id) ?? null;
+  async findById(id: string, ownerUserId?: string): Promise<DriverPaymentEntity | null> {
+    const payment = this.store.get(id);
+    return payment && (!ownerUserId || payment.ownerUserId === ownerUserId) ? payment : null;
   }
 
   async list(filters: DriverPaymentFilters): Promise<DriverPaymentEntity[]> {
@@ -34,6 +35,9 @@ export class InMemoryDriverPaymentsRepository implements DriverPaymentsRepositor
 
     return [...this.store.values()]
       .filter((payment) => {
+        if (filters.ownerUserId && payment.ownerUserId !== filters.ownerUserId) {
+          return false;
+        }
         if (filters.driverId && payment.driverId !== filters.driverId) {
           return false;
         }

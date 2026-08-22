@@ -48,6 +48,11 @@ import { ListarFretesQuery } from '@freights/presentation/dtos/listar-fretes.que
 export class FreightsController {
   constructor(@Inject(FreightsService) private readonly freightsService: FreightsService) {}
 
+  /** ADMIN vê a própria carteira; motorista vê a do gestor a que pertence. */
+  private escopo(req: AuthenticatedRequest): Promise<string> {
+    return this.freightsService.escopoDe({ userId: req.user.sub, role: req.user.role });
+  }
+
   @Post('from-cte/:chave')
   @ApiOperation({
     summary: 'Criar frete a partir de um CT-e',
@@ -59,8 +64,12 @@ export class FreightsController {
   @ApiBadRequestResponse({ description: 'CT-e cancelado ou denegado não vira frete.' })
   @ApiNotFoundResponse({ description: 'CT-e não importado ainda.' })
   @ApiConflictResponse({ description: 'Este CT-e já pertence a um frete.' })
-  async criarDoCte(@Param('chave') chave: string, @Body() dto: CriarFreteDoCteDto) {
-    return this.freightsService.criarDoCte(chave, dto);
+  async criarDoCte(
+    @Req() req: AuthenticatedRequest,
+    @Param('chave') chave: string,
+    @Body() dto: CriarFreteDoCteDto,
+  ) {
+    return this.freightsService.criarDoCte(chave, dto, await this.escopo(req));
   }
 
   @Post()
@@ -70,15 +79,16 @@ export class FreightsController {
   })
   @ApiCreatedResponse({ description: 'Frete criado.' })
   @ApiBadRequestResponse({ description: 'Dados inválidos.' })
-  async criar(@Body() dto: CriarFreteDto) {
-    return this.freightsService.criar(dto);
+  async criar(@Req() req: AuthenticatedRequest, @Body() dto: CriarFreteDto) {
+    return this.freightsService.criar(dto, await this.escopo(req));
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar fretes', description: 'Do mais recente para o mais antigo.' })
   @ApiOkResponse({ description: 'Lista de fretes.' })
-  async listar(@Query() query: ListarFretesQuery) {
+  async listar(@Req() req: AuthenticatedRequest, @Query() query: ListarFretesQuery) {
     return this.freightsService.listar({
+      ownerUserId: await this.escopo(req),
       status: query.status,
       truckId: query.truckId,
       driverId: query.driverId,
@@ -91,8 +101,8 @@ export class FreightsController {
   @ApiOperation({ summary: 'Detalhar frete' })
   @ApiOkResponse({ description: 'Frete encontrado.' })
   @ApiNotFoundResponse({ description: 'Frete não encontrado.' })
-  async detalhar(@Param('id', ParseUUIDPipe) id: string) {
-    return this.freightsService.buscar(id);
+  async detalhar(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
+    return this.freightsService.buscar(id, await this.escopo(req));
   }
 
   @Patch(':id')
@@ -100,8 +110,12 @@ export class FreightsController {
   @ApiOkResponse({ description: 'Frete atualizado.' })
   @ApiBadRequestResponse({ description: 'Dados inválidos.' })
   @ApiNotFoundResponse({ description: 'Frete não encontrado.' })
-  async atualizar(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AtualizarFreteDto) {
-    return this.freightsService.atualizar(id, dto);
+  async atualizar(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AtualizarFreteDto,
+  ) {
+    return this.freightsService.atualizar(id, dto, await this.escopo(req));
   }
 
   @Patch(':id/status')
@@ -119,7 +133,12 @@ export class FreightsController {
     @Body() dto: AlterarStatusDto,
   ) {
     // Quem mudou o status assina o evento na timeline do frete.
-    return this.freightsService.alterarStatus(id, dto.status, req.user.sub);
+    return this.freightsService.alterarStatus(
+      id,
+      dto.status,
+      req.user.sub,
+      await this.escopo(req),
+    );
   }
 
   @Delete(':id')
@@ -127,7 +146,7 @@ export class FreightsController {
   @ApiOperation({ summary: 'Remover frete' })
   @ApiNoContentResponse({ description: 'Frete removido.' })
   @ApiNotFoundResponse({ description: 'Frete não encontrado.' })
-  async remover(@Param('id', ParseUUIDPipe) id: string) {
-    await this.freightsService.remover(id);
+  async remover(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
+    await this.freightsService.remover(id, await this.escopo(req));
   }
 }

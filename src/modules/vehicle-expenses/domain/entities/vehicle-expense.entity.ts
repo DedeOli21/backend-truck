@@ -2,6 +2,7 @@ import { VehicleExpenseCategory } from '@database/typeorm/entities/enums';
 
 export class VehicleExpenseEntity {
   id!: string;
+  ownerUserId!: string;
   truckId!: string;
   driverId!: string;
   category!: VehicleExpenseCategory;

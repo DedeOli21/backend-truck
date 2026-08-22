@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -26,6 +27,7 @@ import {
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.interface';
 import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
 import {
@@ -94,11 +96,12 @@ export class CteController {
   @ApiBadRequestResponse({
     description: 'NF-e inválida, cancelada, ou dados insuficientes para montar o CT-e.',
   })
-  async emitir(@Body() dto: EmitirCteDto) {
+  async emitir(@Req() req: AuthenticatedRequest, @Body() dto: EmitirCteDto) {
     const resultado = await this.emissaoService.emitir(dto);
 
     if (resultado.autorizado) {
       const salvo = await this.documentsService.salvarEmitido({
+        ownerUserId: req.user.sub,
         chave: resultado.chave,
         ambiente: resultado.ambiente,
         protocolo: resultado.protocolo,
@@ -124,10 +127,11 @@ export class CteController {
   })
   @ApiOkResponse({ description: 'CT-e registrado.' })
   @ApiBadRequestResponse({ description: 'Conteúdo sem chave de CT-e válida.' })
-  async importarChave(@Body() dto: ValidarCodigoDto) {
+  async importarChave(@Req() req: AuthenticatedRequest, @Body() dto: ValidarCodigoDto) {
     const leitura = await this.nfeService.validarCodigo(dto, 'CTE');
     const salvo = await this.documentsService.salvarDaChave(
       leitura.documento.chave,
+      req.user.sub,
       leitura.sefaz.situacao,
     );
 
@@ -144,10 +148,13 @@ export class CteController {
   @ApiBadRequestResponse({
     description: 'XML malformado, sem elemento infCte ou com chave de acesso inválida.',
   })
-  async importarXml(@Body() dto: ImportarXmlDto) {
+  async importarXml(@Req() req: AuthenticatedRequest, @Body() dto: ImportarXmlDto) {
     // Importar já guarda: reimportar a mesma chave atualiza o registro e
     // preserva os vínculos com veículo, motorista e frete.
-    return this.documentsService.salvarDoXml(this.nfeService.importarCteXml(dto.xml));
+    return this.documentsService.salvarDoXml(
+      this.nfeService.importarCteXml(dto.xml),
+      req.user.sub,
+    );
   }
 
   @Post('importar-pdf')
@@ -168,13 +175,20 @@ export class CteController {
   @ApiBadRequestResponse({
     description: 'PDF ilegível, sem camada de texto ou sem chave de CT-e válida.',
   })
-  async importarPdf(@UploadedFile() arquivo?: Express.Multer.File) {
+  async importarPdf(
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() arquivo?: Express.Multer.File,
+  ) {
     if (!arquivo) {
       throw new BadRequestException('Envie o PDF no campo "arquivo".');
     }
 
     const extraido = await this.nfeService.importarDactePdf(arquivo.buffer);
-    const salvo = await this.documentsService.salvarDoPdf(extraido, extraido.sefaz.situacao);
+    const salvo = await this.documentsService.salvarDoPdf(
+      extraido,
+      req.user.sub,
+      extraido.sefaz.situacao,
+    );
 
     return { ...salvo, camposNaoEncontrados: extraido.camposNaoEncontrados, sefaz: extraido.sefaz };
   }

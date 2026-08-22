@@ -1,3 +1,4 @@
+import { DriversService } from '@applications/drivers/application/services/drivers.service';
 import { AuthService } from '@applications/auth/application/services/auth.service';
 import { InMemoryFreightTimelineRepository } from '@applications/freight-expenses/infrastructure/repositories/in-memory-freight-timeline.repository';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
@@ -5,6 +6,8 @@ import { CteDocumentEntity } from '@cte-documents/domain/entities/cte-document.e
 import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
 import { FreightsService } from '@freights/application/services/freights.service';
 import { InMemoryFreightsRepository } from '@freights/infrastructure/repositories/in-memory-freights.repository';
+
+const GESTOR = '99999999-9999-4999-8999-999999999999';
 
 const CHAVE = '35260808789863000100570010000011471000000001';
 
@@ -57,11 +60,12 @@ describe('FreightsService', () => {
       documentos as unknown as CteDocumentsService,
       timeline,
       { nomeDoUsuario: async () => 'Administrador' } as unknown as AuthService,
+      { escopoDoUsuario: async () => GESTOR } as unknown as DriversService,
     );
   });
 
   it('cria frete a partir do CT-e, herdando rota, cliente e valores', async () => {
-    const frete = await service.criarDoCte(CHAVE, {});
+    const frete = await service.criarDoCte(CHAVE, {}, GESTOR);
 
     expect(frete.codigo).toBe('CTE-1147');
     expect(frete.origem).toBe('SP - ARUJÁ');
@@ -74,13 +78,13 @@ describe('FreightsService', () => {
   });
 
   it('vincula o CT-e ao frete criado', async () => {
-    const frete = await service.criarDoCte(CHAVE, { driverId: 'driver-1', truckId: 'truck-1' });
+    const frete = await service.criarDoCte(CHAVE, { driverId: 'driver-1', truckId: 'truck-1' }, GESTOR);
 
-    expect(documentos.vincular).toHaveBeenCalledWith(CHAVE, {
-      freightId: frete.id,
-      driverId: 'driver-1',
-      truckId: 'truck-1',
-    });
+    expect(documentos.vincular).toHaveBeenCalledWith(
+      CHAVE,
+      { freightId: frete.id, driverId: 'driver-1', truckId: 'truck-1' },
+      GESTOR,
+    );
     expect(frete.driverId).toBe('driver-1');
     expect(frete.truckId).toBe('truck-1');
   });
@@ -88,27 +92,27 @@ describe('FreightsService', () => {
   it('aproveita o veiculo e motorista ja vinculados ao CT-e', async () => {
     documentos.buscarPorChave.mockResolvedValue(cte({ truckId: 'truck-9', driverId: 'driver-9' }));
 
-    const frete = await service.criarDoCte(CHAVE, {});
+    const frete = await service.criarDoCte(CHAVE, {}, GESTOR);
 
     expect(frete.truckId).toBe('truck-9');
     expect(frete.driverId).toBe('driver-9');
   });
 
   it('recusa criar dois fretes para o mesmo CT-e', async () => {
-    const frete = await service.criarDoCte(CHAVE, {});
+    const frete = await service.criarDoCte(CHAVE, {}, GESTOR);
     documentos.buscarPorChave.mockResolvedValue(cte({ freightId: frete.id }));
 
-    await expect(service.criarDoCte(CHAVE, {})).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.criarDoCte(CHAVE, {}, GESTOR)).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('recusa CT-e cancelado', async () => {
     documentos.buscarPorChave.mockResolvedValue(cte({ situacao: 'CANCELADA' }));
 
-    await expect(service.criarDoCte(CHAVE, {})).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.criarDoCte(CHAVE, {}, GESTOR)).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('avanca o status e carimba as datas', async () => {
-    const frete = await service.criarDoCte(CHAVE, { driverId: 'driver-1', truckId: 'truck-1' });
+    const frete = await service.criarDoCte(CHAVE, { driverId: 'driver-1', truckId: 'truck-1' }, GESTOR);
 
     const emTransito = await service.alterarStatus(frete.id, 'EM_TRANSITO');
     expect(emTransito.iniciadoEm).not.toBeNull();
@@ -118,7 +122,7 @@ describe('FreightsService', () => {
   });
 
   it('recusa iniciar frete sem motorista ou veiculo', async () => {
-    const frete = await service.criarDoCte(CHAVE, {});
+    const frete = await service.criarDoCte(CHAVE, {}, GESTOR);
     await service.atualizar(frete.id, { driverId: null, truckId: null });
 
     await expect(service.alterarStatus(frete.id, 'EM_TRANSITO')).rejects.toBeInstanceOf(
@@ -127,7 +131,7 @@ describe('FreightsService', () => {
   });
 
   it('recusa concluir frete cancelado', async () => {
-    const frete = await service.criarDoCte(CHAVE, { driverId: 'd', truckId: 't' });
+    const frete = await service.criarDoCte(CHAVE, { driverId: 'd', truckId: 't' }, GESTOR);
     await service.alterarStatus(frete.id, 'CANCELADO');
 
     await expect(service.alterarStatus(frete.id, 'CONCLUIDO')).rejects.toBeInstanceOf(
@@ -140,23 +144,23 @@ describe('FreightsService', () => {
       origem: 'SP - SANTOS',
       destino: 'SP - CAMPINAS',
       valorFrete: 1200,
-    });
+    }, GESTOR);
 
     expect(frete.codigo).toMatch(/^FR-/);
     expect(frete.status).toBe('AGENDADO');
   });
 
   it('filtra por status e motorista', async () => {
-    const frete = await service.criarDoCte(CHAVE, { driverId: 'driver-1', truckId: 'truck-1' });
+    const frete = await service.criarDoCte(CHAVE, { driverId: 'driver-1', truckId: 'truck-1' }, GESTOR);
     await service.alterarStatus(frete.id, 'EM_TRANSITO');
-    await service.criar({ origem: 'A', destino: 'B', valorFrete: 10 });
+    await service.criar({ origem: 'A', destino: 'B', valorFrete: 10 }, GESTOR);
 
-    expect(await service.listar({ status: 'EM_TRANSITO' })).toHaveLength(1);
-    expect(await service.listar({ driverId: 'driver-1' })).toHaveLength(1);
-    expect(await service.listar({})).toHaveLength(2);
+    expect(await service.listar({ ownerUserId: GESTOR,  status: 'EM_TRANSITO' })).toHaveLength(1);
+    expect(await service.listar({ ownerUserId: GESTOR,  driverId: 'driver-1' })).toHaveLength(1);
+    expect(await service.listar({ ownerUserId: GESTOR, })).toHaveLength(2);
   });
 
   it('lanca NotFound para frete inexistente', async () => {
-    await expect(service.buscar('nao-existe')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.buscar('nao-existe', GESTOR)).rejects.toBeInstanceOf(NotFoundException);
   });
 });

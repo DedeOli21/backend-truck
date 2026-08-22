@@ -8,6 +8,7 @@ import {
   Patch,
   Body,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -24,6 +25,7 @@ import {
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.interface';
 import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
 import { ListarCteQuery } from '@cte-documents/presentation/dtos/listar-cte.query';
 import { VincularCteDto } from '@cte-documents/presentation/dtos/vincular-cte.dto';
@@ -46,8 +48,9 @@ export class CteDocumentsController {
       'Lista os CT-e já importados, do mais recente para o mais antigo pela data de emissão.',
   })
   @ApiOkResponse({ description: 'Lista de CT-e.' })
-  async listar(@Query() query: ListarCteQuery) {
+  async listar(@Req() req: AuthenticatedRequest, @Query() query: ListarCteQuery) {
     return this.documentsService.listar({
+      ownerUserId: req.user.sub,
       truckId: query.truckId,
       driverId: query.driverId,
       freightId: query.freightId,
@@ -62,8 +65,8 @@ export class CteDocumentsController {
   @ApiParam({ name: 'chave', example: '35260808789863000100570010000011471000000001' })
   @ApiOkResponse({ description: 'CT-e encontrado.' })
   @ApiNotFoundResponse({ description: 'CT-e não importado ainda.' })
-  async detalhar(@Param('chave') chave: string) {
-    return this.documentsService.buscarPorChave(chave);
+  async detalhar(@Req() req: AuthenticatedRequest, @Param('chave') chave: string) {
+    return this.documentsService.buscarPorChave(chave, req.user.sub);
   }
 
   @Patch(':chave/vinculos')
@@ -75,8 +78,12 @@ export class CteDocumentsController {
   @ApiOkResponse({ description: 'Vínculos atualizados.' })
   @ApiBadRequestResponse({ description: 'Identificador em formato inválido.' })
   @ApiNotFoundResponse({ description: 'CT-e não importado ainda.' })
-  async vincular(@Param('chave') chave: string, @Body() dto: VincularCteDto) {
-    return this.documentsService.vincular(chave, dto);
+  async vincular(
+    @Req() req: AuthenticatedRequest,
+    @Param('chave') chave: string,
+    @Body() dto: VincularCteDto,
+  ) {
+    return this.documentsService.vincular(chave, dto, req.user.sub);
   }
 
   @Delete(':chave')
@@ -84,7 +91,7 @@ export class CteDocumentsController {
   @ApiOperation({ summary: 'Remover CT-e guardado' })
   @ApiNoContentResponse({ description: 'CT-e removido.' })
   @ApiNotFoundResponse({ description: 'CT-e não importado ainda.' })
-  async remover(@Param('chave') chave: string) {
-    await this.documentsService.remover(chave);
+  async remover(@Req() req: AuthenticatedRequest, @Param('chave') chave: string) {
+    await this.documentsService.remover(chave, req.user.sub);
   }
 }

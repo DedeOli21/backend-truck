@@ -20,6 +20,10 @@ export class RefuelingOrmEntity {
   @PrimaryColumn('uuid')
   id!: string;
 
+  /** Gestor dono do registro. Todo acesso é filtrado por ele. */
+  @Column({ name: 'owner_user_id', type: 'uuid' })
+  ownerUserId!: string;
+
   @Column({ name: 'truck_id', type: 'uuid' })
   truckId!: string;
 

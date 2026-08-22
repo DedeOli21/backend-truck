@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { AuthService } from '@applications/auth/application/services/auth.service';
+import { DriversService } from '@applications/drivers/application/services/drivers.service';
 import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
 import { FreightTimelineEventEntity } from '@applications/freight-expenses/domain/entities/freight-timeline-event.entity';
 import {
@@ -51,6 +52,9 @@ const TITULO_POR_STATUS: Record<FreightStatus, string> = {
   CANCELADO: 'Frete cancelado',
 };
 
+/** Escopo impossível: não casa com nenhum uuid, então a consulta volta vazia. */
+const SEM_ESCOPO = '__sem-gestor__';
+
 @Injectable()
 export class FreightsService {
   constructor(
@@ -59,6 +63,7 @@ export class FreightsService {
     @Inject(FREIGHT_TIMELINE_REPOSITORY)
     private readonly timeline: FreightTimelineRepository,
     @Inject(AuthService) private readonly auth: AuthService,
+    @Inject(DriversService) private readonly driversService: DriversService,
   ) {}
 
   /**
@@ -88,14 +93,24 @@ export class FreightsService {
     }
   }
 
-  private async codigoLivre(base: string): Promise<string> {
-    if (!(await this.repository.findByCodigo(base))) {
+  /**
+   * Gestor dono dos fretes que este usuário enxerga: ADMIN é dono de si,
+   * motorista herda o gestor que o cadastrou.
+   */
+  async escopoDe(actor: { userId: string; role: 'ADMIN' | 'DRIVER' }): Promise<string> {
+    const escopo = await this.driversService.escopoDoUsuario(actor.userId, actor.role);
+    return escopo ?? SEM_ESCOPO;
+  }
+
+  // O código é único dentro da carteira do gestor, não do banco inteiro.
+  private async codigoLivre(base: string, ownerUserId: string): Promise<string> {
+    if (!(await this.repository.findByCodigo(base, ownerUserId))) {
       return base;
     }
 
     for (let sufixo = 2; sufixo < 100; sufixo += 1) {
       const tentativa = `${base}-${sufixo}`;
-      if (!(await this.repository.findByCodigo(tentativa))) {
+      if (!(await this.repository.findByCodigo(tentativa, ownerUserId))) {
         return tentativa;
       }
     }
@@ -108,8 +123,12 @@ export class FreightsService {
    * documento fiscal, que é a fonte de verdade da operação. O CT-e fica
    * vinculado ao frete criado.
    */
-  async criarDoCte(chave: string, dados: CriarFreteDoCte): Promise<FreightEntity> {
-    const cte = await this.documentos.buscarPorChave(chave);
+  async criarDoCte(
+    chave: string,
+    dados: CriarFreteDoCte,
+    ownerUserId: string,
+  ): Promise<FreightEntity> {
+    const cte = await this.documentos.buscarPorChave(chave, ownerUserId);
 
     if (cte.freightId) {
       throw new ConflictException(
@@ -129,7 +148,8 @@ export class FreightsService {
 
     const frete = new FreightEntity({
       id: randomUUID(),
-      codigo: await this.codigoLivre(`CTE-${cte.numero}`),
+      ownerUserId,
+      codigo: await this.codigoLivre(`CTE-${cte.numero}`, ownerUserId),
       origem: cte.origem ?? 'Não informado',
       destino: cte.destino ?? 'Não informado',
       clienteNome: cte.tomadorNome ?? cte.destinatarioNome,
@@ -151,20 +171,25 @@ export class FreightsService {
     });
 
     const salvo = await this.repository.save(frete);
-    await this.documentos.vincular(chave, { freightId: salvo.id, driverId, truckId });
+    await this.documentos.vincular(
+      chave,
+      { freightId: salvo.id, driverId, truckId },
+      ownerUserId,
+    );
 
     return salvo;
   }
 
-  async criar(dados: CriarFrete): Promise<FreightEntity> {
+  async criar(dados: CriarFrete, ownerUserId: string): Promise<FreightEntity> {
     const agora = new Date();
     const codigo = dados.codigo
-      ? await this.codigoLivre(dados.codigo)
-      : await this.codigoLivre(`FR-${agora.getTime().toString().slice(-6)}`);
+      ? await this.codigoLivre(dados.codigo, ownerUserId)
+      : await this.codigoLivre(`FR-${agora.getTime().toString().slice(-6)}`, ownerUserId);
 
     return this.repository.save(
       new FreightEntity({
         id: randomUUID(),
+        ownerUserId,
         codigo,
         origem: dados.origem,
         destino: dados.destino,
@@ -188,8 +213,8 @@ export class FreightsService {
     );
   }
 
-  async buscar(id: string): Promise<FreightEntity> {
-    const frete = await this.repository.findById(id);
+  async buscar(id: string, ownerUserId?: string): Promise<FreightEntity> {
+    const frete = await this.repository.findById(id, ownerUserId);
 
     if (!frete) {
       throw new NotFoundException('Frete não encontrado.');
@@ -202,8 +227,12 @@ export class FreightsService {
     return this.repository.list(filtros);
   }
 
-  async atualizar(id: string, dados: AtualizarFrete): Promise<FreightEntity> {
-    const frete = await this.buscar(id);
+  async atualizar(
+    id: string,
+    dados: AtualizarFrete,
+    ownerUserId?: string,
+  ): Promise<FreightEntity> {
+    const frete = await this.buscar(id, ownerUserId);
 
     return this.repository.save(
       new FreightEntity({
@@ -233,8 +262,9 @@ export class FreightsService {
     id: string,
     status: FreightStatus,
     autorUserId?: string,
+    ownerUserId?: string,
   ): Promise<FreightEntity> {
-    const frete = await this.buscar(id);
+    const frete = await this.buscar(id, ownerUserId);
 
     if (frete.status === 'CANCELADO' && status !== 'CANCELADO') {
       throw new BadRequestException('Frete cancelado não pode mudar de status.');
@@ -268,8 +298,8 @@ export class FreightsService {
     return atualizado;
   }
 
-  async remover(id: string): Promise<void> {
-    const frete = await this.buscar(id);
+  async remover(id: string, ownerUserId?: string): Promise<void> {
+    const frete = await this.buscar(id, ownerUserId);
     await this.repository.remove(frete.id);
   }
 }

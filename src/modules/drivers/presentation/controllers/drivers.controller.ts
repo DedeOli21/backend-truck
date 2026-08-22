@@ -73,16 +73,19 @@ export class DriversController {
   @ApiOperation({ summary: 'Listar motoristas' })
   @ApiQuery({ name: 'status', required: false, enum: DriverStatus, description: 'Filtra por situação do cadastro' })
   @ApiOkResponse({ description: 'Lista de motoristas.' })
-  async list(@Query('status', new ParseEnumPipe(DriverStatus, { optional: true })) status?: DriverStatus) {
-    return this.driversService.list(status);
+  async list(
+    @Req() req: AuthenticatedRequest,
+    @Query('status', new ParseEnumPipe(DriverStatus, { optional: true })) status?: DriverStatus,
+  ) {
+    return this.driversService.list(status, req.user.sub);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Detalhar motorista' })
   @ApiOkResponse({ description: 'Motorista encontrado.' })
   @ApiNotFoundResponse({ description: 'Motorista não encontrado.' })
-  async findById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.driversService.findById(id);
+  async findById(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
+    return this.driversService.findById(id, req.user.sub);
   }
 
   @Patch(':id')
@@ -96,7 +99,7 @@ export class DriversController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDriverDto,
   ) {
-    return this.driversService.update(id, dto, req.user.sub);
+    return this.driversService.update(id, dto, req.user.sub, req.user.sub);
   }
 
   @Patch(':id/status')
@@ -109,7 +112,7 @@ export class DriversController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDriverStatusDto,
   ) {
-    return this.driversService.updateStatus(id, dto.status, req.user.sub);
+    return this.driversService.updateStatus(id, dto.status, req.user.sub, req.user.sub);
   }
 
   @Post(':id/access')
@@ -123,7 +126,13 @@ export class DriversController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DefineDriverAccessDto,
   ) {
-    return this.driversService.defineDriverAccess(id, dto.email, dto.password, req.user.sub);
+    return this.driversService.defineDriverAccess(
+      id,
+      dto.email,
+      dto.password,
+      req.user.sub,
+      req.user.sub,
+    );
   }
 
   @Post(':id/cnh-image')
@@ -145,15 +154,24 @@ export class DriversController {
     if (!file) {
       throw new BadRequestException('Arquivo de imagem obrigatorio');
     }
-    return this.driversService.saveCnhImagePath(id, file.filename, req.user.sub);
+    return this.driversService.saveCnhImagePath(
+      id,
+      file.filename,
+      req.user.sub,
+      req.user.sub,
+    );
   }
 
   @Get(':id/cnh-image')
   @ApiOperation({ summary: 'Baixar imagem da CNH' })
   @ApiOkResponse({ description: 'Imagem da CNH.' })
   @ApiNotFoundResponse({ description: 'Motorista sem imagem de CNH.' })
-  async getCnhImage(@Param('id', ParseUUIDPipe) id: string, @Res({ passthrough: true }) res: Response) {
-    const storedFilename = await this.driversService.getCnhImagePath(id);
+  async getCnhImage(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const storedFilename = await this.driversService.getCnhImagePath(id, req.user.sub);
     const absolutePath = join(CNH_UPLOADS_DIR, storedFilename);
     res.set({ 'Content-Type': mimeTypeFromPath(absolutePath) });
     return new StreamableFile(createReadStream(absolutePath));

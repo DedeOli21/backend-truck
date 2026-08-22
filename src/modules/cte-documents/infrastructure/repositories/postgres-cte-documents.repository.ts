@@ -33,13 +33,19 @@ export class PostgresCteDocumentsRepository implements CteDocumentsRepository {
     return this.toDomain(await this.repository.findOneOrFail({ where: { id: documento.id } }));
   }
 
-  async findByChave(chave: string): Promise<CteDocumentEntity | null> {
-    const row = await this.repository.findOne({ where: { chave } });
+  async findByChave(chave: string, ownerUserId?: string): Promise<CteDocumentEntity | null> {
+    const row = await this.repository.findOne({
+      where: ownerUserId ? { chave, ownerUserId } : { chave },
+    });
     return row ? this.toDomain(row) : null;
   }
 
   async list(filtros: CteDocumentFilters): Promise<CteDocumentEntity[]> {
     const query = this.repository.createQueryBuilder('cte');
+
+    if (filtros.ownerUserId) {
+      query.andWhere('cte.owner_user_id = :ownerUserId', { ownerUserId: filtros.ownerUserId });
+    }
 
     if (filtros.truckId) query.andWhere('cte.truckId = :truckId', { truckId: filtros.truckId });
     if (filtros.driverId) query.andWhere('cte.driverId = :driverId', { driverId: filtros.driverId });

@@ -3,6 +3,8 @@ import { CteDocumentsService } from '@cte-documents/application/services/cte-doc
 import { InMemoryCteDocumentsRepository } from '@cte-documents/infrastructure/repositories/in-memory-cte-documents.repository';
 import { CteImportado } from '@nf-e/domain/value-objects/cte-xml';
 
+const GESTOR = '99999999-9999-4999-8999-999999999999';
+
 const CHAVE = '35260808789863000100570010000011471000000001';
 
 const importado = (over: Partial<CteImportado> = {}): CteImportado => ({
@@ -42,7 +44,7 @@ describe('CteDocumentsService', () => {
   });
 
   it('salva o CT-e lido do XML', async () => {
-    const salvo = await service.salvarDoXml(importado());
+    const salvo = await service.salvarDoXml(importado(), GESTOR);
 
     expect(salvo.chave).toBe(CHAVE);
     expect(salvo.numero).toBe(1147);
@@ -53,8 +55,8 @@ describe('CteDocumentsService', () => {
   });
 
   it('reimportar a mesma chave atualiza em vez de duplicar', async () => {
-    const primeiro = await service.salvarDoXml(importado());
-    const segundo = await service.salvarDoXml(importado({ valorTotal: 5000 }));
+    const primeiro = await service.salvarDoXml(importado(), GESTOR);
+    const segundo = await service.salvarDoXml(importado({ valorTotal: 5000 }), GESTOR);
 
     expect(segundo.id).toBe(primeiro.id);
     expect(segundo.valorTotalServico).toBe(5000);
@@ -62,10 +64,10 @@ describe('CteDocumentsService', () => {
   });
 
   it('preserva os vinculos ao reimportar', async () => {
-    const salvo = await service.salvarDoXml(importado());
+    const salvo = await service.salvarDoXml(importado(), GESTOR);
     await service.vincular(CHAVE, { truckId: 'truck-1', driverId: 'driver-1' });
 
-    const reimportado = await service.salvarDoXml(importado({ valorTotal: 5000 }));
+    const reimportado = await service.salvarDoXml(importado({ valorTotal: 5000 }), GESTOR);
 
     expect(reimportado.truckId).toBe('truck-1');
     expect(reimportado.driverId).toBe('driver-1');
@@ -73,7 +75,7 @@ describe('CteDocumentsService', () => {
   });
 
   it('nao rebaixa dado de XML para dado de PDF', async () => {
-    await service.salvarDoXml(importado());
+    await service.salvarDoXml(importado(), GESTOR);
     const depois = await service.salvarDoPdf({
       chave: CHAVE,
       numero: 1147,
@@ -100,7 +102,7 @@ describe('CteDocumentsService', () => {
       autorizadoEm: null,
       observacoes: null,
       camposNaoEncontrados: [],
-    });
+    }, GESTOR);
 
     // O XML continua mandando nos campos que ele preencheu; o PDF só acrescenta.
     expect(depois.origemLeitura).toBe('XML');
@@ -109,7 +111,7 @@ describe('CteDocumentsService', () => {
   });
 
   it('busca por chave', async () => {
-    await service.salvarDoXml(importado());
+    await service.salvarDoXml(importado(), GESTOR);
     expect((await service.buscarPorChave(CHAVE)).numero).toBe(1147);
   });
 
@@ -121,10 +123,11 @@ describe('CteDocumentsService', () => {
   });
 
   it('filtra por veiculo, motorista e situacao', async () => {
-    await service.salvarDoXml(importado());
+    await service.salvarDoXml(importado(), GESTOR);
     await service.vincular(CHAVE, { truckId: 'truck-1', driverId: 'driver-1' });
     await service.salvarDoXml(
       importado({ chave: '35260808789863000100570010000011481000000009', numero: 1148 }),
+      GESTOR,
     );
 
     expect(await service.listar({ truckId: 'truck-1' })).toHaveLength(1);
@@ -133,7 +136,7 @@ describe('CteDocumentsService', () => {
   });
 
   it('vincula e desvincula frete', async () => {
-    await service.salvarDoXml(importado());
+    await service.salvarDoXml(importado(), GESTOR);
 
     const vinculado = await service.vincular(CHAVE, { freightId: 'frete-1' });
     expect(vinculado.freightId).toBe('frete-1');
@@ -143,7 +146,7 @@ describe('CteDocumentsService', () => {
   });
 
   it('remove o documento', async () => {
-    await service.salvarDoXml(importado());
+    await service.salvarDoXml(importado(), GESTOR);
     await service.remover(CHAVE);
 
     expect(await service.listar({})).toHaveLength(0);

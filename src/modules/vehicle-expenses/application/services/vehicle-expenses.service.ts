@@ -23,6 +23,9 @@ export interface VehicleExpenseActor {
   role: 'ADMIN' | 'DRIVER';
 }
 
+/** Escopo impossível: não casa com nenhum uuid, então a consulta volta vazia. */
+const SEM_ESCOPO = '__sem-gestor__';
+
 export interface VehicleExpenseResponse {
   id: string;
   truckId: string;
@@ -95,8 +98,17 @@ export class VehicleExpensesService {
     }
   }
 
-  private async getOrFail(id: string): Promise<VehicleExpenseEntity> {
-    const expense = await this.expensesRepository.findById(id);
+  /**
+   * Gestor dono dos dados que este usuário enxerga: ADMIN é dono de si,
+   * motorista herda o gestor que o cadastrou.
+   */
+  private async escopoDe(actor: VehicleExpenseActor): Promise<string> {
+    const escopo = await this.driversService.escopoDoUsuario(actor.userId, actor.role);
+    return escopo ?? SEM_ESCOPO;
+  }
+
+  private async getOrFail(id: string, ownerUserId?: string): Promise<VehicleExpenseEntity> {
+    const expense = await this.expensesRepository.findById(id, ownerUserId);
 
     if (!expense) {
       throw new NotFoundException('Gasto não encontrado.');
@@ -110,12 +122,15 @@ export class VehicleExpensesService {
     actor: VehicleExpenseActor,
   ): Promise<VehicleExpenseResponse> {
     // Sem esta checagem a violação de chave estrangeira sobe como 500.
-    await this.trucksService.findById(dto.truckId);
+    const escopo = await this.escopoDe(actor);
+    // O veículo precisa ser da frota do gestor: id de outra frota vira 404.
+    await this.trucksService.findById(dto.truckId, escopo);
     const driverId = await this.resolveDriverId(actor, dto.driverId);
     const now = new Date();
 
     const expense = new VehicleExpenseEntity({
       id: randomUUID(),
+      ownerUserId: escopo,
       truckId: dto.truckId,
       driverId,
       category: dto.category,
@@ -140,6 +155,7 @@ export class VehicleExpensesService {
         : ((await this.driversService.findIdByUserId(actor.userId)) ?? '__sem-motorista__');
 
     const expenses = await this.expensesRepository.list({
+      ownerUserId: await this.escopoDe(actor),
       truckId: query.truckId,
       driverId,
       category: query.category,
@@ -151,7 +167,7 @@ export class VehicleExpensesService {
   }
 
   async findById(id: string, actor: VehicleExpenseActor): Promise<VehicleExpenseResponse> {
-    const expense = await this.getOrFail(id);
+    const expense = await this.getOrFail(id, await this.escopoDe(actor));
     await this.assertCanTouch(expense, actor);
 
     return this.toResponse(expense);
@@ -162,11 +178,11 @@ export class VehicleExpensesService {
     dto: UpdateVehicleExpenseDto,
     actor: VehicleExpenseActor,
   ): Promise<VehicleExpenseResponse> {
-    const current = await this.getOrFail(id);
+    const current = await this.getOrFail(id, await this.escopoDe(actor));
     await this.assertCanTouch(current, actor);
 
     if (dto.truckId) {
-      await this.trucksService.findById(dto.truckId);
+      await this.trucksService.findById(dto.truckId, await this.escopoDe(actor));
     }
 
     const updated = new VehicleExpenseEntity({
@@ -185,7 +201,7 @@ export class VehicleExpensesService {
   }
 
   async remove(id: string, actor: VehicleExpenseActor): Promise<void> {
-    const expense = await this.getOrFail(id);
+    const expense = await this.getOrFail(id, await this.escopoDe(actor));
     await this.assertCanTouch(expense, actor);
 
     await this.expensesRepository.remove(id);

@@ -2,6 +2,7 @@ import { TruckStatus, TruckType } from '@database/typeorm/entities/enums';
 
 export class TruckEntity {
   id!: string;
+  ownerUserId!: string;
   plate!: string;
   rntrc!: string | null;
   brandModel!: string;

@@ -2,6 +2,7 @@ export type OrigemLeituraCte = 'XML' | 'PDF' | 'CHAVE';
 
 export class CteDocumentEntity {
   id!: string;
+  ownerUserId!: string;
   chave!: string;
   numero!: number;
   serie!: number;

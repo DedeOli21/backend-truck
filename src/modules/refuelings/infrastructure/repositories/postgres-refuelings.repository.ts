@@ -18,6 +18,7 @@ export class PostgresRefuelingsRepository implements RefuelingsRepository {
   private toDomain(row: RefuelingOrmEntity): RefuelingEntity {
     return new RefuelingEntity({
       id: row.id,
+      ownerUserId: row.ownerUserId,
       truckId: row.truckId,
       driverId: row.driverId,
       liters: Number(row.liters),
@@ -33,6 +34,7 @@ export class PostgresRefuelingsRepository implements RefuelingsRepository {
 
   private toRow(refueling: RefuelingEntity) {
     return {
+      ownerUserId: refueling.ownerUserId,
       truckId: refueling.truckId,
       driverId: refueling.driverId,
       liters: refueling.liters,
@@ -49,13 +51,19 @@ export class PostgresRefuelingsRepository implements RefuelingsRepository {
     return this.toDomain(await this.repository.save(row));
   }
 
-  async findById(id: string): Promise<RefuelingEntity | null> {
-    const row = await this.repository.findOne({ where: { id } });
+  async findById(id: string, ownerUserId?: string): Promise<RefuelingEntity | null> {
+    const row = await this.repository.findOne({
+      where: ownerUserId ? { id, ownerUserId } : { id },
+    });
     return row ? this.toDomain(row) : null;
   }
 
   async list(filters: RefuelingFilters): Promise<RefuelingEntity[]> {
     const query = this.repository.createQueryBuilder('refueling');
+
+    if (filters.ownerUserId) {
+      query.andWhere('refueling.owner_user_id = :ownerUserId', { ownerUserId: filters.ownerUserId });
+    }
 
     if (filters.truckId) {
       query.andWhere('refueling.truckId = :truckId', { truckId: filters.truckId });

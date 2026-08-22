@@ -1,5 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { DriversService } from '@applications/drivers/application/services/drivers.service';
 import { TruckStatus, TruckType } from '@database/typeorm/entities/enums';
 import { TruckEntity } from '@trucks/domain/entities/truck.entity';
 import { TRUCKS_REPOSITORY, TrucksRepository } from '@trucks/domain/repositories/trucks.repository';
@@ -20,9 +21,20 @@ export interface TruckResponse {
   updatedAt: string;
 }
 
+export interface TruckActor {
+  userId: string;
+  role: 'ADMIN' | 'DRIVER';
+}
+
+/** Escopo impossível: não casa com nenhum uuid, então a consulta volta vazia. */
+const SEM_ESCOPO = '__sem-gestor__';
+
 @Injectable()
 export class TrucksService {
-  constructor(@Inject(TRUCKS_REPOSITORY) private readonly trucksRepository: TrucksRepository) {}
+  constructor(
+    @Inject(TRUCKS_REPOSITORY) private readonly trucksRepository: TrucksRepository,
+    @Inject(DriversService) private readonly driversService: DriversService,
+  ) {}
 
   private toResponse(truck: TruckEntity): TruckResponse {
     return {
@@ -40,16 +52,18 @@ export class TrucksService {
     };
   }
 
-  async create(dto: CreateTruckDto): Promise<TruckResponse> {
+  async create(dto: CreateTruckDto, ownerUserId: string): Promise<TruckResponse> {
     const plate = normalizePlate(dto.plate);
 
-    if (await this.trucksRepository.findByPlate(plate)) {
+    // A placa é única dentro da frota do gestor, não do banco inteiro.
+    if (await this.trucksRepository.findByPlate(plate, ownerUserId)) {
       throw new ConflictException('Já existe um veículo com essa placa.');
     }
 
     const now = new Date();
     const truck = new TruckEntity({
       id: randomUUID(),
+      ownerUserId,
       plate,
       rntrc: dto.rntrc ?? null,
       brandModel: dto.brandModel.trim(),
@@ -65,13 +79,22 @@ export class TrucksService {
     return this.toResponse(await this.trucksRepository.create(truck));
   }
 
-  async list(status?: TruckStatus): Promise<TruckResponse[]> {
-    const trucks = await this.trucksRepository.list(status);
+  /**
+   * Escopo de quem está pedindo: ADMIN vê a própria frota; motorista vê a
+   * frota do gestor a que pertence. Sem vínculo, não vê nada.
+   */
+  async escopoDe(actor: TruckActor): Promise<string> {
+    const escopo = await this.driversService.escopoDoUsuario(actor.userId, actor.role);
+    return escopo ?? SEM_ESCOPO;
+  }
+
+  async list(status?: TruckStatus, ownerUserId?: string): Promise<TruckResponse[]> {
+    const trucks = await this.trucksRepository.list(status, ownerUserId);
     return trucks.map((truck) => this.toResponse(truck));
   }
 
-  private async getOrFail(id: string): Promise<TruckEntity> {
-    const truck = await this.trucksRepository.findById(id);
+  private async getOrFail(id: string, ownerUserId?: string): Promise<TruckEntity> {
+    const truck = await this.trucksRepository.findById(id, ownerUserId);
 
     if (!truck) {
       throw new NotFoundException('Veículo não encontrado.');
@@ -80,16 +103,20 @@ export class TrucksService {
     return truck;
   }
 
-  async findById(id: string): Promise<TruckResponse> {
-    return this.toResponse(await this.getOrFail(id));
+  async findById(id: string, ownerUserId?: string): Promise<TruckResponse> {
+    return this.toResponse(await this.getOrFail(id, ownerUserId));
   }
 
-  async update(id: string, dto: UpdateTruckDto): Promise<TruckResponse> {
-    const current = await this.getOrFail(id);
+  async update(
+    id: string,
+    dto: UpdateTruckDto,
+    ownerUserId?: string,
+  ): Promise<TruckResponse> {
+    const current = await this.getOrFail(id, ownerUserId);
 
     if (dto.plate !== undefined) {
       const plate = normalizePlate(dto.plate);
-      const existing = await this.trucksRepository.findByPlate(plate);
+      const existing = await this.trucksRepository.findByPlate(plate, ownerUserId);
 
       if (existing && existing.id !== id) {
         throw new ConflictException('Já existe um veículo com essa placa.');
@@ -112,8 +139,8 @@ export class TrucksService {
     return this.toResponse(await this.trucksRepository.update(id, updated));
   }
 
-  async remove(id: string): Promise<void> {
-    await this.getOrFail(id);
+  async remove(id: string, ownerUserId?: string): Promise<void> {
+    await this.getOrFail(id, ownerUserId);
     await this.trucksRepository.remove(id);
   }
 }
