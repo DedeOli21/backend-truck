@@ -1,38 +1,53 @@
 import { PayablesService } from '@applications/payables/application/services/payables.service';
+import { PayableEntity } from '@payables/domain/entities/payable.entity';
 import { InMemoryPayablesRepository } from '@payables/infrastructure/repositories/in-memory-payables.repository';
 
+const USER = 'driver-payables-1';
+
+const boleto = (over: Partial<PayableEntity> = {}) =>
+  new PayableEntity(
+    over.id ?? 'payable-1',
+    USER,
+    'MAINTENANCE',
+    'Manutenção do cavalo mecânico',
+    1200,
+    new Date('2026-09-10T00:00:00.000Z'),
+    over.urgent ?? true,
+    over.paid ?? false,
+    null,
+  );
+
 describe('PayablesService', () => {
+  let repository: InMemoryPayablesRepository;
   let service: PayablesService;
 
   beforeEach(() => {
-    service = new PayablesService(new InMemoryPayablesRepository());
+    repository = new InMemoryPayablesRepository();
+    service = new PayablesService(repository);
   });
 
-  it('deve listar boletos urgentes padrao', async () => {
-    const userId = 'driver-payables-1';
-
-    const payables = await service.listUrgentPayables(userId);
-
-    expect(payables).toHaveLength(3);
-    expect(payables.every((item) => item.urgent)).toBe(true);
-    expect(payables.every((item) => item.paid === false)).toBe(true);
+  it('não inventa boleto para quem não tem nenhum', async () => {
+    expect(await service.listUrgentPayables(USER)).toEqual([]);
   });
 
-  it('deve marcar boleto como pago com transactionId', async () => {
-    const userId = 'driver-payables-2';
+  it('lista apenas os boletos urgentes e ainda em aberto', async () => {
+    await repository.saveMany(USER, [
+      boleto({ id: 'urgente' }),
+      boleto({ id: 'nao-urgente', urgent: false }),
+      boleto({ id: 'ja-pago', paid: true }),
+    ]);
 
-    const initial = await service.listUrgentPayables(userId);
-    const targetId = initial[0].id;
+    const payables = await service.listUrgentPayables(USER);
 
-    const paid = await service.payPayable(userId, targetId);
+    expect(payables.map((item) => item.id)).toEqual(['urgente']);
+  });
 
-    expect(paid.id).toBe(targetId);
+  it('marca o boleto como pago e guarda a transação', async () => {
+    await repository.saveMany(USER, [boleto({ id: 'urgente' })]);
+
+    const paid = await service.payPayable(USER, 'urgente');
+
     expect(paid.paid).toBe(true);
     expect(paid.transactionId).toBeTruthy();
   });
 });
-
-
-
-
-
