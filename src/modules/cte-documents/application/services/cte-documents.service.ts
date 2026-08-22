@@ -268,6 +268,19 @@ export class CteDocumentsService {
     const documento = await this.buscarPorChave(chave, ownerUserId);
     await this.repository.remove(documento.id);
   }
+  async obterXml(chave: string, ownerUserId?: string): Promise<{ xml: string; chave: string; numero: number; serie: number }> {
+    const documento = await this.buscarPorChave(chave, ownerUserId);
+    if (!documento.xml) {
+      throw new NotFoundException(`XML do CT-e ${chave} não disponível.`);
+    }
+    return {
+      xml: documento.xml,
+      chave: documento.chave,
+      numero: documento.numero,
+      serie: documento.serie,
+    };
+  }
+
 async gerarDacte(chave: string, ownerUserId?: string): Promise<Buffer> {
     const documento = await this.buscarPorChave(chave, ownerUserId);
 

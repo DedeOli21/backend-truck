@@ -84,6 +84,29 @@ export class CteDocumentsController {
     res.end(pdf);
   }
 
+  @Get(':chave/xml')
+  @ApiOperation({
+    summary: 'Baixar XML do CT-e',
+    description:
+      'Retorna o XML autorizado (cteProc) do CT-e emitido ou importado.',
+  })
+  @ApiParam({ name: 'chave', example: '35260808789863000100570010000011471000000001' })
+  @ApiOkResponse({ description: 'XML do CT-e.' })
+  @ApiNotFoundResponse({ description: 'CT-e não encontrado ou XML não disponível.' })
+  async baixarXml(
+    @Req() req: AuthenticatedRequest,
+    @Param('chave') chave: string,
+    @Res() res: any,
+  ) {
+    const { xml, numero, serie } = await this.documentsService.obterXml(chave, req.user.sub);
+    res.set({
+      'Content-Type': 'application/xml',
+      'Content-Disposition': `attachment; filename="CTe_${numero}_${serie}_${chave}.xml"`,
+      'Content-Length': Buffer.byteLength(xml, 'utf-8'),
+    });
+    res.send(xml);
+  }
+
   @Get(':chave')
   @ApiOperation({ summary: 'Detalhar CT-e guardado' })
   @ApiParam({ name: 'chave', example: '35260808789863000100570010000011471000000001' })
