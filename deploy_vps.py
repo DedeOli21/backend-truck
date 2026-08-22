@@ -23,11 +23,10 @@ print("Conectado!")
 
 sftp = client.open_sftp()
 
-# Envia .env.production para a VPS
-env_local = "/home/david/projeto-freela/backend-truck/.env.production"
-env_remote = f"{REMOTE_DIR}/.env.production"
-print(f"Enviando .env.production -> {env_remote}")
-sftp.put(env_local, env_remote)
+# O .env.production NAO e enviado: o arquivo da VPS e a fonte de verdade e
+# contem segredos que nao estao no repositorio (senha do certificado A1, por
+# exemplo). Sobrescrever aqui apagava essa configuracao a cada deploy.
+print("Mantendo o .env.production existente na VPS (nao sobrescrito).")
 
 for local, remote in files_to_upload:
     print(f"Enviando {os.path.basename(local)} -> {remote}")
