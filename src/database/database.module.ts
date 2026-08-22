@@ -7,6 +7,7 @@ import { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
 import { RefuelingOrmEntity } from '@database/typeorm/entities/refueling.orm-entity';
 import { VehicleExpenseOrmEntity } from '@database/typeorm/entities/vehicle-expense.orm-entity';
 import { CteDocumentOrmEntity } from '@database/typeorm/entities/cte-document.orm-entity';
+import { FreightOrmEntity } from '@database/typeorm/entities/freight.orm-entity';
 import { UserOrmEntity } from '@database/typeorm/entities/user.orm-entity';
 import { WalletOrmEntity } from '@database/typeorm/entities/wallet.orm-entity';
 import { DriverOrmEntity } from '@database/typeorm/entities/driver.orm-entity';
@@ -35,6 +36,7 @@ const isTest = process.env.NODE_ENV === 'test';
               RefuelingOrmEntity,
               VehicleExpenseOrmEntity,
               CteDocumentOrmEntity,
+              FreightOrmEntity,
               WalletOrmEntity,
               TransactionOrmEntity,
               PayableOrmEntity,

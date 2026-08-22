@@ -107,6 +107,7 @@ export async function createConfiguredApp(adapter?: ExpressAdapter) {
         .addTag('Autenticação', 'Cadastro, login e renovação de token')
         .addTag('Veículos', 'Cadastro da frota: placa, tipo, capacidade e status')
         .addTag('Motoristas', 'Cadastro, aprovação, acesso e CNH dos motoristas')
+        .addTag('Fretes', 'Fretes da operação, criados a partir do CT-e ou avulsos')
         .addTag('Abastecimentos', 'Lançamento de abastecimentos, com litros, valor e odômetro')
         .addTag('Gastos de Veículos', 'Pedágio, borracharia, manutenção rápida e outros gastos')
         .addTag('Financeiro', 'Saldo consolidado e sincronização via Open Banking')

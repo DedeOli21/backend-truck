@@ -3,6 +3,7 @@ export { TruckOrmEntity } from '@database/typeorm/entities/truck.orm-entity';
 export { RefuelingOrmEntity } from '@database/typeorm/entities/refueling.orm-entity';
 export { VehicleExpenseOrmEntity } from '@database/typeorm/entities/vehicle-expense.orm-entity';
 export { CteDocumentOrmEntity } from '@database/typeorm/entities/cte-document.orm-entity';
+export { FreightOrmEntity } from '@database/typeorm/entities/freight.orm-entity';
 export { WalletOrmEntity } from '@database/typeorm/entities/wallet.orm-entity';
 export { TransactionOrmEntity } from '@database/typeorm/entities/transaction.orm-entity';
 export { PayableOrmEntity } from '@database/typeorm/entities/payable.orm-entity';
