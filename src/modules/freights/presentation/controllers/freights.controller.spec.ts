@@ -1,3 +1,4 @@
+import { ExecutionContext } from '@nestjs/common';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -23,7 +24,11 @@ import { NfeService } from '@nf-e/application/services/nf-e.service';
 import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
 import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
 import { CteController } from '@nf-e/presentation/controllers/cte.controller';
+import { AuthService } from '@applications/auth/application/services/auth.service';
+import { FREIGHT_TIMELINE_REPOSITORY } from '@applications/freight-expenses/domain/repositories/freight-timeline.repository';
+import { InMemoryFreightTimelineRepository } from '@applications/freight-expenses/infrastructure/repositories/in-memory-freight-timeline.repository';
 
+const ADMIN_USER = '33333333-3333-4333-8333-333333333333';
 const CHAVE = '35260808789863000100570010000011471000000001';
 const TRUCK = '11111111-1111-4111-8111-111111111111';
 const DRIVER = '22222222-2222-4222-8222-222222222222';
@@ -59,10 +64,18 @@ describe('Fluxo CT-e → frete (rotas)', () => {
         { provide: NFE_PROVIDER, useClass: NotConfiguredNfeProvider },
         { provide: CTE_DOCUMENTS_REPOSITORY, useClass: InMemoryCteDocumentsRepository },
         { provide: FREIGHTS_REPOSITORY, useClass: InMemoryFreightsRepository },
+        { provide: FREIGHT_TIMELINE_REPOSITORY, useClass: InMemoryFreightTimelineRepository },
+        { provide: AuthService, useValue: { nomeDoUsuario: async () => 'Administrador' } },
       ],
     })
       .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
+      // O guard real preenche req.user; aqui simulamos o ADMIN autenticado.
+      .useValue({
+        canActivate: (context: ExecutionContext) => {
+          context.switchToHttp().getRequest().user = { sub: ADMIN_USER, role: 'ADMIN' };
+          return true;
+        },
+      })
       .overrideGuard(RolesGuard)
       .useValue({ canActivate: () => true })
       .compile();

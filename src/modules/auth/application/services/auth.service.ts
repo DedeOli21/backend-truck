@@ -106,6 +106,12 @@ export class AuthService {
     };
   }
 
+  /** Nome legível de quem agiu, para trilhas de auditoria e timelines. */
+  async nomeDoUsuario(id: string): Promise<string> {
+    const user = await this.usersRepository.findById(id);
+    return user?.name ?? 'Usuário removido';
+  }
+
   async login(dto: LoginDto) {
     const user = await this.validateCredentials(dto.email, dto.password);
     return this.issueTokens(user);

@@ -1,3 +1,5 @@
+import { AuthService } from '@applications/auth/application/services/auth.service';
+import { InMemoryFreightTimelineRepository } from '@applications/freight-expenses/infrastructure/repositories/in-memory-freight-timeline.repository';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { CteDocumentEntity } from '@cte-documents/domain/entities/cte-document.entity';
 import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
@@ -40,15 +42,22 @@ const cte = (over: Partial<CteDocumentEntity> = {}) =>
 describe('FreightsService', () => {
   let repository: InMemoryFreightsRepository;
   let documentos: { buscarPorChave: jest.Mock; vincular: jest.Mock };
+  let timeline: InMemoryFreightTimelineRepository;
   let service: FreightsService;
 
   beforeEach(() => {
     repository = new InMemoryFreightsRepository();
+    timeline = new InMemoryFreightTimelineRepository();
     documentos = {
       buscarPorChave: jest.fn(async () => cte()),
       vincular: jest.fn(async () => cte()),
     };
-    service = new FreightsService(repository, documentos as unknown as CteDocumentsService);
+    service = new FreightsService(
+      repository,
+      documentos as unknown as CteDocumentsService,
+      timeline,
+      { nomeDoUsuario: async () => 'Administrador' } as unknown as AuthService,
+    );
   });
 
   it('cria frete a partir do CT-e, herdando rota, cliente e valores', async () => {

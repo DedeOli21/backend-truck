@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Req,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -29,6 +30,7 @@ import {
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.interface';
 import { FreightsService } from '@freights/application/services/freights.service';
 import { AlterarStatusDto } from '@freights/presentation/dtos/alterar-status.dto';
 import { AtualizarFreteDto } from '@freights/presentation/dtos/atualizar-frete.dto';
@@ -111,8 +113,13 @@ export class FreightsController {
   @ApiOkResponse({ description: 'Situação alterada.' })
   @ApiBadRequestResponse({ description: 'Transição não permitida.' })
   @ApiNotFoundResponse({ description: 'Frete não encontrado.' })
-  async alterarStatus(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AlterarStatusDto) {
-    return this.freightsService.alterarStatus(id, dto.status);
+  async alterarStatus(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AlterarStatusDto,
+  ) {
+    // Quem mudou o status assina o evento na timeline do frete.
+    return this.freightsService.alterarStatus(id, dto.status, req.user.sub);
   }
 
   @Delete(':id')

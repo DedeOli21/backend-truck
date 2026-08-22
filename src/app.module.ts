@@ -13,6 +13,10 @@ import { FinanceModule } from '@modules/finance/finance.module';
 import { PayablesModule } from '@modules/payables/payables.module';
 import { DriverPaymentsModule } from '@modules/driver-payments/driver-payments.module';
 import { TransactionsModule } from '@modules/transactions/transactions.module';
+import { CustomersModule } from '@applications/customers/customers.module';
+import { SuppliersModule } from '@applications/suppliers/suppliers.module';
+import { FleetRoutesModule } from '@applications/fleet-routes/fleet-routes.module';
+import { FreightExpensesModule } from '@applications/freight-expenses/freight-expenses.module';
 import { HealthController } from '@common/controllers/health.controller';
 
 @Module({
@@ -31,6 +35,10 @@ import { HealthController } from '@common/controllers/health.controller';
     CteDocumentsModule,
     FreightsModule,
     DriverPaymentsModule,
+    CustomersModule,
+    SuppliersModule,
+    FleetRoutesModule,
+    FreightExpensesModule,
   ],
   controllers: [HealthController],
 })

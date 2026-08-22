@@ -92,3 +92,12 @@ export enum VehicleExpenseCategory {
   MANUTENCAO = 'MANUTENCAO',
   OUTROS = 'OUTROS',
 }
+
+export enum FreightExpenseType {
+  PEDAGIO = 'PEDAGIO',
+  COMBUSTIVEL = 'COMBUSTIVEL',
+  DIARIA = 'DIARIA',
+  MANUTENCAO = 'MANUTENCAO',
+  COMISSAO = 'COMISSAO',
+  OUTROS = 'OUTROS',
+}

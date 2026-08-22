@@ -6,7 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { AuthService } from '@applications/auth/application/services/auth.service';
 import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
+import { FreightTimelineEventEntity } from '@applications/freight-expenses/domain/entities/freight-timeline-event.entity';
+import {
+  FREIGHT_TIMELINE_REPOSITORY,
+  FreightTimelineRepository,
+} from '@applications/freight-expenses/domain/repositories/freight-timeline.repository';
 import { FreightEntity, FreightStatus } from '@freights/domain/entities/freight.entity';
 import {
   FREIGHTS_REPOSITORY,
@@ -37,12 +43,50 @@ export interface CriarFrete {
 
 export type AtualizarFrete = Partial<Omit<CriarFrete, 'codigo'>>;
 
+/** Rótulo de cada transição, para a timeline ficar legível sem consulta extra. */
+const TITULO_POR_STATUS: Record<FreightStatus, string> = {
+  AGENDADO: 'Frete agendado',
+  EM_TRANSITO: 'Frete em trânsito',
+  CONCLUIDO: 'Entrega concluída',
+  CANCELADO: 'Frete cancelado',
+};
+
 @Injectable()
 export class FreightsService {
   constructor(
     @Inject(FREIGHTS_REPOSITORY) private readonly repository: FreightsRepository,
     @Inject(CteDocumentsService) private readonly documentos: CteDocumentsService,
+    @Inject(FREIGHT_TIMELINE_REPOSITORY)
+    private readonly timeline: FreightTimelineRepository,
+    @Inject(AuthService) private readonly auth: AuthService,
   ) {}
+
+  /**
+   * A timeline é histórico: uma falha ao registrar o evento não pode desfazer
+   * a mudança de status que já foi gravada.
+   */
+  private async registrarEvento(
+    frete: FreightEntity,
+    status: FreightStatus,
+    autorUserId: string | null,
+    description: string | null,
+  ): Promise<void> {
+    try {
+      await this.timeline.create(
+        new FreightTimelineEventEntity({
+          id: randomUUID(),
+          freightId: frete.id,
+          title: TITULO_POR_STATUS[status] ?? 'Frete atualizado',
+          description,
+          status,
+          updatedBy: autorUserId ? await this.auth.nomeDoUsuario(autorUserId) : 'Sistema',
+          createdAt: new Date(),
+        }),
+      );
+    } catch {
+      // Silencioso de propósito: perder um evento é melhor que perder a operação.
+    }
+  }
 
   private async codigoLivre(base: string): Promise<string> {
     if (!(await this.repository.findByCodigo(base))) {
@@ -185,7 +229,11 @@ export class FreightsService {
    * Regras do ciclo: só sai de AGENDADO com motorista e veículo definidos, e
    * frete cancelado não volta atrás.
    */
-  async alterarStatus(id: string, status: FreightStatus): Promise<FreightEntity> {
+  async alterarStatus(
+    id: string,
+    status: FreightStatus,
+    autorUserId?: string,
+  ): Promise<FreightEntity> {
     const frete = await this.buscar(id);
 
     if (frete.status === 'CANCELADO' && status !== 'CANCELADO') {
@@ -200,7 +248,7 @@ export class FreightsService {
 
     const agora = new Date();
 
-    return this.repository.save(
+    const atualizado = await this.repository.save(
       new FreightEntity({
         ...frete,
         status,
@@ -209,6 +257,15 @@ export class FreightsService {
         updatedAt: agora,
       }),
     );
+
+    await this.registrarEvento(
+      atualizado,
+      status,
+      autorUserId ?? null,
+      `Status alterado de ${frete.status} para ${status}.`,
+    );
+
+    return atualizado;
   }
 
   async remover(id: string): Promise<void> {

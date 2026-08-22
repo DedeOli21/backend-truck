@@ -14,6 +14,11 @@ export { DriverReferenceContactOrmEntity } from '@database/typeorm/entities/driv
 export { DriverAuditLogOrmEntity } from '@database/typeorm/entities/driver-audit-log.orm-entity';
 export { DriverPaymentOrmEntity } from '@database/typeorm/entities/driver-payment.orm-entity';
 export { DriverPaymentAuditLogOrmEntity } from '@database/typeorm/entities/driver-payment-audit-log.orm-entity';
+export { CustomerOrmEntity } from '@database/typeorm/entities/customer.orm-entity';
+export { SupplierOrmEntity } from '@database/typeorm/entities/supplier.orm-entity';
+export { FleetRouteOrmEntity } from '@database/typeorm/entities/fleet-route.orm-entity';
+export { FreightExpenseOrmEntity } from '@database/typeorm/entities/freight-expense.orm-entity';
+export { FreightTimelineEventOrmEntity } from '@database/typeorm/entities/freight-timeline-event.orm-entity';
 export {
   UserRole,
   TransactionDirection,

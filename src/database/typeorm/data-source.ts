@@ -18,6 +18,11 @@ import {
   DriverAuditLogOrmEntity,
   DriverPaymentOrmEntity,
   DriverPaymentAuditLogOrmEntity,
+  CustomerOrmEntity,
+  SupplierOrmEntity,
+  FleetRouteOrmEntity,
+  FreightExpenseOrmEntity,
+  FreightTimelineEventOrmEntity,
 } from '@database/typeorm/entities';
 
 
@@ -49,6 +54,11 @@ export default new DataSource({
     DriverAuditLogOrmEntity,
     DriverPaymentOrmEntity,
     DriverPaymentAuditLogOrmEntity,
+    CustomerOrmEntity,
+    SupplierOrmEntity,
+    FleetRouteOrmEntity,
+    FreightExpenseOrmEntity,
+    FreightTimelineEventOrmEntity,
   ],
   migrations: ['src/database/typeorm/migrations/*.ts', 'dist/database/typeorm/migrations/*.js'],
   synchronize: false,
