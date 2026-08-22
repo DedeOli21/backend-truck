@@ -146,6 +146,15 @@ export class CteDocumentsService {
     });
   }
 
+  /**
+   * Grava o CT-e a partir apenas da chave lida do QR Code ou do código de
+   * barras. Só há o que a chave carrega; o conteúdo chega depois, quando o XML
+   * ou o PDF forem importados — e aí não sobrescreve o que já existe.
+   */
+  async salvarDaChave(chave: string, situacao?: string | null): Promise<CteDocumentEntity> {
+    return this.upsert(chave, 'CHAVE', { situacao: situacao ?? null });
+  }
+
   async buscarPorChave(chave: string): Promise<CteDocumentEntity> {
     const documento = await this.repository.findByChave(chave);
 

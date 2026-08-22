@@ -79,6 +79,24 @@ export class CteController {
     return this.nfeService.validarCodigo(dto, 'CTE');
   }
 
+  @Post('importar-chave')
+  @ApiOperation({
+    summary: 'Registrar CT-e pela chave lida',
+    description:
+      'Para o fluxo do leitor de QR Code e código de barras: grava o CT-e com o que a chave carrega e a situação consultada na SEFAZ. O conteúdo completo entra depois, ao importar o XML ou o PDF.',
+  })
+  @ApiOkResponse({ description: 'CT-e registrado.' })
+  @ApiBadRequestResponse({ description: 'Conteúdo sem chave de CT-e válida.' })
+  async importarChave(@Body() dto: ValidarCodigoDto) {
+    const leitura = await this.nfeService.validarCodigo(dto, 'CTE');
+    const salvo = await this.documentsService.salvarDaChave(
+      leitura.documento.chave,
+      leitura.sefaz.situacao,
+    );
+
+    return { ...salvo, origem: leitura.origem, sefaz: leitura.sefaz };
+  }
+
   @Post('importar-xml')
   @ApiOperation({
     summary: 'Importar XML do CT-e',

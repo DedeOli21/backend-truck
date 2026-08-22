@@ -147,6 +147,35 @@ describe('Persistência de CT-e (rotas)', () => {
       .expect(404);
   });
 
+  it('registra o CT-e a partir da chave lida pelo scanner', async () => {
+    const { body } = await request(app.getHttpServer())
+      .post('/cte/importar-chave')
+      .send({ conteudo: CHAVE })
+      .expect(201);
+
+    expect(body.chave).toBe(CHAVE);
+    expect(body.numero).toBe(1147);
+    expect(body.origemLeitura).toBe('CHAVE');
+  });
+
+  it('a leitura por chave nao apaga o conteudo ja vindo do XML', async () => {
+    await importar().expect(201);
+    const { body } = await request(app.getHttpServer())
+      .post('/cte/importar-chave')
+      .send({ conteudo: CHAVE })
+      .expect(201);
+
+    expect(body.origemLeitura).toBe('XML');
+    expect(body.valorTotalServico).toBe(4500);
+  });
+
+  it('recusa conteudo sem chave de CT-e', async () => {
+    await request(app.getHttpServer())
+      .post('/cte/importar-chave')
+      .send({ conteudo: 'https://exemplo.com/sem-chave' })
+      .expect(400);
+  });
+
   it('remove o CT-e guardado', async () => {
     await importar().expect(201);
     await request(app.getHttpServer()).delete(`/cte/documentos/${CHAVE}`).expect(204);
