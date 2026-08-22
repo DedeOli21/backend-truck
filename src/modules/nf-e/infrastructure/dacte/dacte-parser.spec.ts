@@ -39,6 +39,13 @@ describe('parseDacteTexto', () => {
     expect(dacte.destino).toBe('MG - CONTAGEM');
   });
 
+  it('extrai o tomador sem arrastar os rotulos vizinhos da mesma linha', () => {
+    // No PDF a linha e "TOMADOR DO SERVICO: L&M PACK ... MUNICIPIO: CONTAGEM CEP: ..."
+    expect(dacte.tomador.nome).toBe('L&M PACK DISTRIBUIDORA LTDA');
+    expect(dacte.tomador.nome).not.toMatch(/MUNIC[ÍI]PIO|CEP/);
+    expect(dacte.tomador.cnpjCpf).toBe('18.442.358/0001-30');
+  });
+
   it('extrai remetente e destinatario', () => {
     expect(dacte.remetente.nome).toBe('MEIWA INDUSTRIA E COMERCIO LTDA');
     expect(dacte.remetente.cnpjCpf).toBe('55.078.307/0001-05');

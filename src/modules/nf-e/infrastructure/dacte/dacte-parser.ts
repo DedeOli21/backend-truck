@@ -46,6 +46,18 @@ const numeroBr = (valor: string | null | undefined): number | null => {
 
 const primeiro = (texto: string, regex: RegExp): string | null => regex.exec(texto)?.[1]?.trim() ?? null;
 
+// No texto extraído do PDF os rótulos vizinhos podem vir na mesma linha,
+// separados por um único espaço. Sem cortar, o nome do participante sai com
+// "MUNICÍPIO: ... CEP: ..." grudado.
+const ROTULOS_VIZINHOS =
+  /\s*(MUNIC[ÍI]PIO|MUNICIPIO|CEP|CNPJ\/CPF|INSCRI[ÇC][ÃA]O|ENDERE[ÇC]O|FONE|UF|PA[ÍI]S)\s*:.*$/i;
+
+const limparNome = (valor: string | null): string | null => {
+  if (!valor) return null;
+  const limpo = valor.replace(ROTULOS_VIZINHOS, '').trim();
+  return limpo || null;
+};
+
 /**
  * Extrai as chaves de 44 dígitos do DACTE.
  *
@@ -90,7 +102,7 @@ const participante = (texto: string, rotulo: RegExp): ParticipanteDacte => {
   const janela = corte ? resto.slice(0, corte.index + 1) : resto;
 
   return {
-    nome: bloco[1]?.trim() || null,
+    nome: limparNome(bloco[1] ?? null),
     cnpjCpf: primeiro(janela, /CNPJ\/CPF:\s*([\d./-]{11,20})/) ,
     municipio: primeiro(janela, /MUNIC[ÍI]PIO:\s*([^\n]+?)(?:\s{2,}|\s*CEP:|\n)/),
     uf: primeiro(janela, /\bUF:\s*([A-Z]{2})\b/),
@@ -139,7 +151,7 @@ export const parseDacteTexto = (texto: string): DacteExtraido => {
     destino: registrar('destino', municipios[1] ?? null),
     remetente: participante(texto, /REMETENTE:\s*([^\n]+)/),
     destinatario: participante(texto, /DESTINAT[ÁA]RIO:\s*([^\n]+)/),
-    tomador: participante(texto, /TOMADOR DO SERVI[ÇC]O:\s*([^\n]+?)(?:\s{2,}MUNIC[ÍI]PIO|$|\n)/m),
+    tomador: participante(texto, /TOMADOR DO SERVI[ÇC]O:\s*([^\n]+)/),
     valorTotalServico: registrar(
       'valorTotalServico',
       numeroBr(primeiro(texto, /VALOR TOTAL DO SERVI[ÇC]O\s*\n?R?\$?\s*([\d.,]+)/)),
