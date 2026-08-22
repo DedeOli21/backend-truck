@@ -1,5 +1,6 @@
 import { gerarDactePdf, DadosDacte } from '@nf-e/infrastructure/dacte/dacte-pdf.service';
 import { writeFileSync } from 'fs';
+import { logoEmitente } from '@nf-e/infrastructure/dacte/logo';
 
 const dados: DadosDacte = {
   chave: '35260808789863000100570010000011471000000001',
@@ -76,6 +77,7 @@ const dados: DadosDacte = {
   protocolo: '135264179761055',
   autorizadoEm: '2026-08-21T18:13:30.000Z',
   observacoes: 'JM DE OLIVEIRA CARGAS ME - MEIWAL SP DESTINO L&M PACK 21/08/26.',
+  logo: logoEmitente(),
 };
 
 test('gera PDF do DACTE com os dados do CT-e 1147', async () => {
@@ -87,3 +89,7 @@ test('gera PDF do DACTE com os dados do CT-e 1147', async () => {
   writeFileSync('/tmp/dacte-teste.pdf', pdf);
   console.log(`PDF gerado: ${pdf.length} bytes`);
 }, 15000);
+
+test('a logomarca do emitente está disponível como data URI JPEG', () => {
+  expect(logoEmitente()).toMatch(/^data:image\/jpeg;base64,/);
+});

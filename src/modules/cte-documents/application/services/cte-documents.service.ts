@@ -10,6 +10,7 @@ import { parseChaveAcesso } from '@nf-e/domain/value-objects/chave-acesso';
 import { CteImportado, parseCteXml } from '@nf-e/domain/value-objects/cte-xml';
 import { DacteExtraido } from '@nf-e/infrastructure/dacte/dacte-parser';
 import { gerarDactePdf, DadosDacte } from '@nf-e/infrastructure/dacte/dacte-pdf.service';
+import { logoEmitente } from '@nf-e/infrastructure/dacte/logo';
 export interface VinculoCte {
   truckId?: string | null;
   driverId?: string | null;
@@ -363,6 +364,7 @@ async gerarDacte(chave: string, ownerUserId?: string): Promise<Buffer> {
       naturezaOperacao: documento.naturezaOperacao ?? 'PRESTACAO DE SERVICO DE TRANSPORTE',
       emitidoEm: (documento.emitidoEm ?? new Date()).toISOString(),
       emitente,
+      logo: logoEmitente(),
       remetente: {
         nome: documento.remetenteNome ?? '',
         cnpjCpf: documento.remetenteDocumento ?? '',

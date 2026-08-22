@@ -7,6 +7,10 @@
       {
         "include": "modules/nf-e/infrastructure/sefaz/ca/*.pem",
         "outDir": "dist"
+      },
+      {
+        "include": "modules/nf-e/infrastructure/dacte/assets/*",
+        "outDir": "dist"
       }
     ],
     "watchAssets": true
