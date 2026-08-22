@@ -7,6 +7,14 @@ import { CteDocumentsService } from '@cte-documents/application/services/cte-doc
 import { CTE_DOCUMENTS_REPOSITORY } from '@cte-documents/domain/repositories/cte-documents.repository';
 import { InMemoryCteDocumentsRepository } from '@cte-documents/infrastructure/repositories/in-memory-cte-documents.repository';
 import { CteDocumentsController } from '@cte-documents/presentation/controllers/cte-documents.controller';
+import {
+  CERTIFICADO_EMISSAO,
+  EmissaoCteService,
+  TRANSMISSOR_SEFAZ,
+} from '@nf-e/application/services/emissao-cte.service';
+import { EMISSOR_CONFIG, lerEmissorConfig } from '@nf-e/infrastructure/emissao/emissor.config';
+import { InMemoryNumeracaoRepository } from '@nf-e/infrastructure/emissao/in-memory-numeracao.repository';
+import { NUMERACAO_REPOSITORY } from '@nf-e/infrastructure/emissao/numeracao.repository';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
 import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
 import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
@@ -26,6 +34,12 @@ describe('Persistência de CT-e (rotas)', () => {
       providers: [
         CteDocumentsService,
         NfeService,
+        EmissaoCteService,
+        { provide: EMISSOR_CONFIG, useFactory: () => lerEmissorConfig({}) },
+        { provide: NUMERACAO_REPOSITORY, useClass: InMemoryNumeracaoRepository },
+        { provide: TRANSMISSOR_SEFAZ, useValue: { enviar: jest.fn() } },
+        // Sem certificado nos testes de rota: a emissão em si tem spec própria.
+        { provide: CERTIFICADO_EMISSAO, useValue: null },
         { provide: NFE_PROVIDER, useClass: NotConfiguredNfeProvider },
         { provide: CTE_DOCUMENTS_REPOSITORY, useClass: InMemoryCteDocumentsRepository },
       ],

@@ -152,6 +152,18 @@ export class CteDocumentOrmEntity {
   @Column({ name: 'freight_id', type: 'uuid', nullable: true })
   freightId!: string | null;
 
+  @Column({ name: 'emitido_por_nos', type: 'boolean', default: false })
+  emitidoPorNos!: boolean;
+
+  @Column({ type: 'smallint', nullable: true })
+  ambiente!: number | null;
+
+  @Column({ type: 'text', nullable: true })
+  xml!: string | null;
+
+  @Column({ name: 'motivo_rejeicao', type: 'varchar', length: 255, nullable: true })
+  motivoRejeicao!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

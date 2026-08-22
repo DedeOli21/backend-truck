@@ -16,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -31,6 +32,8 @@ import {
   ConsultaNfeResponseDto,
   ValidacaoCodigoResponseDto,
 } from '@nf-e/presentation/dtos/consulta-nfe.response';
+import { EmissaoCteService } from '@nf-e/application/services/emissao-cte.service';
+import { EmitirCteDto } from '@nf-e/presentation/dtos/emitir-cte.dto';
 import { ImportarXmlDto } from '@nf-e/presentation/dtos/importar-xml.dto';
 import { ValidarCodigoDto } from '@nf-e/presentation/dtos/validar-codigo.dto';
 
@@ -44,6 +47,7 @@ export class CteController {
   constructor(
     @Inject(NfeService) private readonly nfeService: NfeService,
     @Inject(CteDocumentsService) private readonly documentsService: CteDocumentsService,
+    @Inject(EmissaoCteService) private readonly emissaoService: EmissaoCteService,
   ) {}
 
   @Get('qr/:chave')
@@ -77,6 +81,39 @@ export class CteController {
   })
   async validar(@Body() dto: ValidarCodigoDto) {
     return this.nfeService.validarCodigo(dto, 'CTE');
+  }
+
+  @Post('emitir')
+  @Roles('ADMIN')
+  @ApiOperation({
+    summary: 'Emitir CT-e a partir da NF-e',
+    description:
+      'Gera o XML do CT-e 4.00 com os dados da NF-e transportada, assina com o certificado A1 e transmite à SEFAZ. Autorizado, guarda o documento com o protocolo e vincula veículo e motorista; rejeitado, devolve o código e o motivo da SEFAZ sem gravar como válido. O ambiente padrão é homologação, que não tem valor fiscal.',
+  })
+  @ApiCreatedResponse({ description: 'CT-e transmitido. Ver o campo autorizado no retorno.' })
+  @ApiBadRequestResponse({
+    description: 'NF-e inválida, cancelada, ou dados insuficientes para montar o CT-e.',
+  })
+  async emitir(@Body() dto: EmitirCteDto) {
+    const resultado = await this.emissaoService.emitir(dto);
+
+    if (resultado.autorizado) {
+      const salvo = await this.documentsService.salvarEmitido({
+        chave: resultado.chave,
+        ambiente: resultado.ambiente,
+        protocolo: resultado.protocolo,
+        autorizadoEm: resultado.autorizadoEm,
+        xml: resultado.xml,
+        notasFiscais: [resultado.nfeTransportada],
+        truckId: dto.truckId ?? null,
+        driverId: dto.driverId ?? null,
+        valorTotalServico: dto.valorFrete,
+      });
+
+      return { ...resultado, documento: salvo };
+    }
+
+    return resultado;
   }
 
   @Post('importar-chave')

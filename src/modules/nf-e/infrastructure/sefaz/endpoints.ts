@@ -94,4 +94,38 @@ export const endpointConsulta = (
   return ambiente === 1 ? config.producao : config.homologacao;
 };
 
+/** Recepção síncrona do CT-e 4.00 (CTeRecepcaoSincV4). */
+const SVRS_RECEPCAO = {
+  producao: 'https://cte.svrs.rs.gov.br/ws/cterecepcaosinc/cterecepcaosinc.asmx',
+  homologacao: 'https://cte-homologacao.svrs.rs.gov.br/ws/cterecepcaosinc/cterecepcaosinc.asmx',
+};
+
+const RECEPCAO_CTE: Record<string, { producao: string; homologacao: string }> = {
+  SP: {
+    producao: 'https://nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoSinc.asmx',
+    homologacao: 'https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoSinc.asmx',
+  },
+  MG: {
+    producao: 'https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4',
+    homologacao: 'https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4',
+  },
+  MS: {
+    producao: 'https://producao.cte.ms.gov.br/ws/CTeRecepcaoSincV4',
+    homologacao: 'https://homologacao.cte.ms.gov.br/ws/CTeRecepcaoSincV4',
+  },
+  MT: {
+    producao: 'https://cte.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoSincV4',
+    homologacao: 'https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoSincV4',
+  },
+  PR: {
+    producao: 'https://cte.fazenda.pr.gov.br/cte4/CTeRecepcaoSincV4',
+    homologacao: 'https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeRecepcaoSincV4',
+  },
+};
+
+export const endpointRecepcaoCte = (uf: string, ambiente: 1 | 2): string => {
+  const config = RECEPCAO_CTE[uf.toUpperCase()] ?? SVRS_RECEPCAO;
+  return ambiente === 1 ? config.producao : config.homologacao;
+};
+
 export const ufsComAutorizadorProprio = Object.keys(ENDPOINTS);

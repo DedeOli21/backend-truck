@@ -11,6 +11,14 @@ import { FreightsService } from '@freights/application/services/freights.service
 import { FREIGHTS_REPOSITORY } from '@freights/domain/repositories/freights.repository';
 import { InMemoryFreightsRepository } from '@freights/infrastructure/repositories/in-memory-freights.repository';
 import { FreightsController } from '@freights/presentation/controllers/freights.controller';
+import {
+  CERTIFICADO_EMISSAO,
+  EmissaoCteService,
+  TRANSMISSOR_SEFAZ,
+} from '@nf-e/application/services/emissao-cte.service';
+import { EMISSOR_CONFIG, lerEmissorConfig } from '@nf-e/infrastructure/emissao/emissor.config';
+import { InMemoryNumeracaoRepository } from '@nf-e/infrastructure/emissao/in-memory-numeracao.repository';
+import { NUMERACAO_REPOSITORY } from '@nf-e/infrastructure/emissao/numeracao.repository';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
 import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
 import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
@@ -42,6 +50,12 @@ describe('Fluxo CT-e → frete (rotas)', () => {
         FreightsService,
         CteDocumentsService,
         NfeService,
+        EmissaoCteService,
+        { provide: EMISSOR_CONFIG, useFactory: () => lerEmissorConfig({}) },
+        { provide: NUMERACAO_REPOSITORY, useClass: InMemoryNumeracaoRepository },
+        { provide: TRANSMISSOR_SEFAZ, useValue: { enviar: jest.fn() } },
+        // Sem certificado nos testes de rota: a emissão em si tem spec própria.
+        { provide: CERTIFICADO_EMISSAO, useValue: null },
         { provide: NFE_PROVIDER, useClass: NotConfiguredNfeProvider },
         { provide: CTE_DOCUMENTS_REPOSITORY, useClass: InMemoryCteDocumentsRepository },
         { provide: FREIGHTS_REPOSITORY, useClass: InMemoryFreightsRepository },

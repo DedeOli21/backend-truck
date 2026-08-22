@@ -34,6 +34,10 @@ export class CteDocumentEntity {
   truckId!: string | null;
   driverId!: string | null;
   freightId!: string | null;
+  emitidoPorNos!: boolean;
+  ambiente!: number | null;
+  xml!: string | null;
+  motivoRejeicao!: string | null;
   createdAt!: Date;
   updatedAt!: Date;
 

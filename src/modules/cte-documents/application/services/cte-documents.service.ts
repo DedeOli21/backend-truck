@@ -84,6 +84,10 @@ export class CteDocumentsService {
       autorizadoEm: mesclar('autorizadoEm'),
       situacao: mesclar('situacao'),
       origemLeitura: origemFinal,
+      emitidoPorNos: campos.emitidoPorNos ?? atual?.emitidoPorNos ?? false,
+      ambiente: mesclar('ambiente'),
+      xml: mesclar('xml'),
+      motivoRejeicao: campos.motivoRejeicao ?? atual?.motivoRejeicao ?? null,
       truckId: atual?.truckId ?? null,
       driverId: atual?.driverId ?? null,
       freightId: atual?.freightId ?? null,
@@ -153,6 +157,38 @@ export class CteDocumentsService {
    */
   async salvarDaChave(chave: string, situacao?: string | null): Promise<CteDocumentEntity> {
     return this.upsert(chave, 'CHAVE', { situacao: situacao ?? null });
+  }
+
+  /** Guarda o CT-e que nós mesmos emitimos, já autorizado pela SEFAZ. */
+  async salvarEmitido(dados: {
+    chave: string;
+    ambiente: number;
+    protocolo: string | null;
+    autorizadoEm: string | null;
+    xml: string | null;
+    notasFiscais: string[];
+    truckId: string | null;
+    driverId: string | null;
+    valorTotalServico: number;
+  }): Promise<CteDocumentEntity> {
+    const salvo = await this.upsert(dados.chave, 'XML', {
+      protocolo: dados.protocolo,
+      autorizadoEm: data(dados.autorizadoEm),
+      situacao: 'AUTORIZADA',
+      notasFiscais: dados.notasFiscais,
+      valorTotalServico: dados.valorTotalServico,
+      valorReceber: dados.valorTotalServico,
+      emitidoPorNos: true,
+      ambiente: dados.ambiente,
+      xml: dados.xml,
+      motivoRejeicao: null,
+    });
+
+    if (dados.truckId || dados.driverId) {
+      return this.vincular(dados.chave, { truckId: dados.truckId, driverId: dados.driverId });
+    }
+
+    return salvo;
   }
 
   async buscarPorChave(chave: string): Promise<CteDocumentEntity> {
