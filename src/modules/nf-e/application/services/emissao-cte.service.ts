@@ -160,7 +160,7 @@ export class EmissaoCteService {
 
     const resposta = await this.transmissor.enviar(
       url,
-      montarEnvelopeRecepcao(assinado, ambiente),
+      montarEnvelopeRecepcao(assinado),
     );
     const retorno = parseRetornoRecepcao(resposta);
 

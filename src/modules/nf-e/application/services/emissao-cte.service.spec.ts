@@ -1,5 +1,4 @@
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
-import { readFileSync } from 'fs';
 import { lerCertificado } from '@nf-e/infrastructure/assinatura/certificado';
 import { EmissorConfig } from '@nf-e/infrastructure/emissao/emissor.config';
 import { InMemoryNumeracaoRepository } from '@nf-e/infrastructure/emissao/in-memory-numeracao.repository';
@@ -78,7 +77,9 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
     );
 
   it('gera, assina e envia o CT-e, devolvendo o protocolo quando autorizado', async () => {
-    const enviar = jest.fn(async (_url: string, _envelope: string) => respostaSefaz(100, true));
+    const enviar = jest.fn<Promise<string>, [string, string]>(async () =>
+      respostaSefaz(100, true),
+    );
     const resultado = await criar({ enviar }).emitir({ nfeXml: NFE_XML, valorFrete: 4500 });
 
     expect(resultado.autorizado).toBe(true);
@@ -90,7 +91,9 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
   });
 
   it('envia o XML assinado, com a NF-e referenciada', async () => {
-    const enviar = jest.fn(async (_url: string, _envelope: string) => respostaSefaz(100, true));
+    const enviar = jest.fn<Promise<string>, [string, string]>(async () =>
+      respostaSefaz(100, true),
+    );
     await criar({ enviar }).emitir({ nfeXml: NFE_XML, valorFrete: 4500 });
 
     const envelope = enviar.mock.calls[0][1];
@@ -101,14 +104,18 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
   });
 
   it('usa CFOP interestadual quando as UFs diferem', async () => {
-    const enviar = jest.fn(async (_url: string, _envelope: string) => respostaSefaz(100, true));
+    const enviar = jest.fn<Promise<string>, [string, string]>(async () =>
+      respostaSefaz(100, true),
+    );
     await criar({ enviar }).emitir({ nfeXml: NFE_XML, valorFrete: 4500 });
 
     expect(enviar.mock.calls[0][1]).toContain('<CFOP>6353</CFOP>');
   });
 
   it('devolve a rejeicao com o motivo, sem inventar autorizacao', async () => {
-    const enviar = jest.fn(async (_url: string, _envelope: string) => respostaSefaz(410, false));
+    const enviar = jest.fn<Promise<string>, [string, string]>(async () =>
+      respostaSefaz(410, false),
+    );
     const resultado = await criar({ enviar }).emitir({ nfeXml: NFE_XML, valorFrete: 4500 });
 
     expect(resultado.autorizado).toBe(false);
@@ -119,7 +126,7 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
   });
 
   it('numera em sequencia, sem repetir', async () => {
-    const service = criar({ enviar: jest.fn(async (_url: string, _envelope: string) => respostaSefaz(100, true)) });
+    const service = criar({ enviar: jest.fn(async () => respostaSefaz(100, true)) });
 
     const primeiro = await service.emitir({ nfeXml: NFE_XML, valorFrete: 100 });
     const segundo = await service.emitir({ nfeXml: NFE_XML, valorFrete: 100 });
@@ -146,7 +153,9 @@ descreveComCertificado('EmissaoCteService (com certificado real)', () => {
   });
 
   it('respeita os componentes de valor informados', async () => {
-    const enviar = jest.fn(async (_url: string, _envelope: string) => respostaSefaz(100, true));
+    const enviar = jest.fn<Promise<string>, [string, string]>(async () =>
+      respostaSefaz(100, true),
+    );
     await criar({ enviar }).emitir({
       nfeXml: NFE_XML,
       valorFrete: 4500,

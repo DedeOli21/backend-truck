@@ -12,7 +12,7 @@ const resposta = (miolo: string) =>
 
 describe('montarEnvelopeRecepcao', () => {
   it('embrulha o CT-e sem repetir a declaracao xml', () => {
-    const envelope = montarEnvelopeRecepcao(CTE, 2);
+    const envelope = montarEnvelopeRecepcao(CTE);
 
     expect(envelope).toContain('cteDadosMsg');
     expect(envelope).toContain('CTeRecepcaoSincV4');

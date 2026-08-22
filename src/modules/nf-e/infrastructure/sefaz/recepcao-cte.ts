@@ -13,7 +13,7 @@ export interface RetornoRecepcao {
   protocoloXml: string | null;
 }
 
-export const montarEnvelopeRecepcao = (cteAssinado: string, tpAmb: 1 | 2): string => {
+export const montarEnvelopeRecepcao = (cteAssinado: string): string => {
   // O CTeRecepcaoSinc recebe o CT-e dentro de cteDadosMsg, sem lote.
   const documento = cteAssinado.replace(/<\?xml[^>]*\?>/, '').trim();
 
