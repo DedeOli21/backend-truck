@@ -129,7 +129,13 @@ describe('parseCteXml', () => {
   });
 
   it('recusa XML que nao e de CT-e', () => {
-    expect(() => parseCteXml('<nfeProc><NFe></NFe></nfeProc>')).toThrow('CT-e');
+    expect(() => parseCteXml('<xml><outro></outro></xml>')).toThrow('CT-e');
+  });
+
+  it('reconhece NF-e mandada por engano e aponta a rota certa', () => {
+    const nfe = '<nfeProc><NFe><infNFe Id="NFe31260836547966000271550030000464521319720980"><ide><nNF>46452</nNF></ide></infNFe></NFe></nfeProc>';
+
+    expect(() => parseCteXml(nfe)).toThrow('/nf-e/importar-xml');
   });
 
   it('recusa XML malformado', () => {

@@ -14,6 +14,7 @@ import {
 import { CteImportado, parseCteXml } from '@nf-e/domain/value-objects/cte-xml';
 import { DacteExtraido, parseDacteTexto } from '@nf-e/infrastructure/dacte/dacte-parser';
 import { extrairTextoDoPdf } from '@nf-e/infrastructure/dacte/pdf-texto';
+import { NfeImportada, parseNfeXml } from '@nf-e/domain/value-objects/nfe-xml';
 import { OrigemLeitura, extrairChaveDeCodigo } from '@nf-e/domain/value-objects/qr-code';
 import { MOTIVO_NAO_CONFIGURADO } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
 import { ValidarCodigoDto } from '@nf-e/presentation/dtos/validar-codigo.dto';
@@ -182,6 +183,11 @@ export class NfeService {
     const consulta = await this.comSefaz(parseChaveAcesso(extraido.chave));
 
     return { ...extraido, sefaz: consulta.sefaz };
+  }
+
+  /** Lê o XML completo da NF-e: emitente, destinatário, transportadora, itens e volumes. */
+  importarNfeXml(xml: string): NfeImportada {
+    return parseNfeXml(xml);
   }
 
   async validarCodigo(

@@ -94,7 +94,14 @@ export const parseCteXml = (xml: string): CteImportado => {
   const infCte = buscarRecursivo(arvore, 'infCte');
 
   if (!infCte) {
-    throw new BadRequestException('XML não é de um CT-e: elemento infCte não encontrado.');
+    // O engano mais comum é mandar a NF-e transportada em vez do CT-e.
+    const ehNfe = Boolean(buscarRecursivo(arvore, 'infNFe'));
+
+    throw new BadRequestException(
+      ehNfe
+        ? 'Este XML é de uma NF-e, não de um CT-e. Use POST /nf-e/importar-xml.'
+        : 'XML não é de um CT-e: elemento infCte não encontrado.',
+    );
   }
 
   const ide = buscarRecursivo(infCte, 'ide') ?? {};

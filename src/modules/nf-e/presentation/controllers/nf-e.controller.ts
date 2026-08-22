@@ -18,6 +18,7 @@ import {
   ValidacaoCodigoResponseDto,
 } from '@nf-e/presentation/dtos/consulta-nfe.response';
 import { ConsultarPorUfParams } from '@nf-e/presentation/dtos/consultar-por-uf.params';
+import { ImportarXmlDto } from '@nf-e/presentation/dtos/importar-xml.dto';
 import { ValidarCodigoDto } from '@nf-e/presentation/dtos/validar-codigo.dto';
 
 @ApiTags('NF-e')
@@ -66,6 +67,20 @@ export class NfeController {
   })
   async consultarPorUfNumero(@Param() params: ConsultarPorUfParams) {
     return this.nfeService.consultarPorUfNumero(params.uf, params.numero);
+  }
+
+  @Post('importar-xml')
+  @ApiOperation({
+    summary: 'Importar XML da NF-e',
+    description:
+      'Lê o XML da NF-e (modelo 55) e devolve o conteúdo estruturado: emitente, destinatário, transportadora, itens com NCM e CFOP, totais, volumes, peso, pedido e protocolo de autorização. Aceita com ou sem o envelope nfeProc; a assinatura digital é ignorada. Para CT-e, use POST /cte/importar-xml.',
+  })
+  @ApiOkResponse({ description: 'NF-e interpretada.' })
+  @ApiBadRequestResponse({
+    description: 'XML malformado, sem elemento infNFe, ou chave que não é de NF-e.',
+  })
+  importarXml(@Body() dto: ImportarXmlDto) {
+    return this.nfeService.importarNfeXml(dto.xml);
   }
 
   @Post('validar')
