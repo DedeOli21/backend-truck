@@ -20,6 +20,13 @@ const data = (valor: string | null | undefined): Date | null =>
   valor ? new Date(valor) : null;
 
 /** Mantém o valor já gravado quando o novo vem vazio: reimportar não apaga dado. */
+/** URL de consulta do QR Code impressa no DACTE, gravada em infCTeSupl. */
+const extrairQrCode = (xml: string | null | undefined): string | undefined => {
+  if (!xml) return undefined;
+  const conteudo = /<qrCodCTe>\s*(?:<!\[CDATA\[)?([^\]<]+)/.exec(xml)?.[1]?.trim();
+  return conteudo || undefined;
+};
+
 const preferir = <T>(novo: T | null | undefined, atual: T | null | undefined): T | null =>
   novo === null || novo === undefined || novo === '' ? (atual ?? null) : novo;
 
@@ -356,6 +363,7 @@ async gerarDacte(chave: string, ownerUserId?: string): Promise<Buffer> {
         { nome: 'Frete valor', valor: documento.valorTotalServico ?? 0 },
       ],
       notasFiscais,
+      qrCode: extrairQrCode(documento.xml),
       protocolo: documento.protocolo ?? '',
       autorizadoEm: (documento.autorizadoEm ?? new Date()).toISOString(),
       observacoes: '',
