@@ -8,11 +8,24 @@ import {
   texto,
 } from '@nf-e/infrastructure/sefaz/consulta-protocolo';
 
+export interface EnderecoNfe {
+  logradouro: string | null;
+  numero: string | null;
+  bairro: string | null;
+  codigoMunicipio: string | null;
+  municipio: string | null;
+  cep: string | null;
+  uf: string | null;
+}
+
 export interface ParticipanteNfe {
   cnpjCpf: string;
   nome: string;
+  inscricaoEstadual: string | null;
   municipio: string | null;
   uf: string | null;
+  /** Endereço completo: a emissão do CT-e precisa dele, não só de município e UF. */
+  endereco: EnderecoNfe;
 }
 
 export interface ItemNfe {
@@ -78,12 +91,25 @@ const participante = (node: unknown, chaveEndereco: string): ParticipanteNfe | n
 
   const endereco = (buscarRecursivo(obj, chaveEndereco) ?? {}) as Record<string, unknown>;
 
+  const municipio = texto(endereco.xMun) ?? texto(obj.xMun);
+  const uf = texto(endereco.UF) ?? texto(obj.UF);
+
   return {
     cnpjCpf: documento ?? '',
     nome: nome ?? '',
+    inscricaoEstadual: texto(obj.IE),
     // A transportadora traz xMun/UF direto, sem bloco de endereço.
-    municipio: texto(endereco.xMun) ?? texto(obj.xMun),
-    uf: texto(endereco.UF) ?? texto(obj.UF),
+    municipio,
+    uf,
+    endereco: {
+      logradouro: texto(endereco.xLgr) ?? texto(obj.xEnder),
+      numero: texto(endereco.nro),
+      bairro: texto(endereco.xBairro),
+      codigoMunicipio: texto(endereco.cMun),
+      municipio,
+      cep: texto(endereco.CEP),
+      uf,
+    },
   };
 };
 

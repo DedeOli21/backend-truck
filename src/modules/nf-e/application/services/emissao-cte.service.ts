@@ -23,6 +23,7 @@ import {
   montarEnvelopeRecepcao,
   parseRetornoRecepcao,
 } from '@nf-e/infrastructure/sefaz/recepcao-cte';
+import { ParticipanteNfe } from '@nf-e/domain/value-objects/nfe-xml';
 import { EmitirCteDto } from '@nf-e/presentation/dtos/emitir-cte.dto';
 
 export interface ResultadoEmissao {
@@ -46,6 +47,25 @@ export interface TransmissorSefaz {
 
 export const TRANSMISSOR_SEFAZ = 'TRANSMISSOR_SEFAZ';
 export const CERTIFICADO_EMISSAO = 'CERTIFICADO_EMISSAO';
+
+/**
+ * Converte o participante da NF-e no formato do CT-e. O endereço vem completo
+ * do XML: mandar "NAO INFORMADO" faz a SEFAZ rejeitar.
+ */
+const participanteDaNfe = (participante: ParticipanteNfe) => ({
+  cnpjCpf: participante.cnpjCpf,
+  nome: participante.nome,
+  inscricaoEstadual: participante.inscricaoEstadual,
+  endereco: {
+    logradouro: participante.endereco.logradouro ?? 'NAO INFORMADO',
+    numero: participante.endereco.numero ?? 'S/N',
+    bairro: participante.endereco.bairro ?? 'CENTRO',
+    codigoMunicipio: participante.endereco.codigoMunicipio ?? '',
+    municipio: participante.municipio ?? '',
+    cep: participante.endereco.cep ?? '',
+    uf: participante.uf ?? '',
+  },
+});
 
 @Injectable()
 export class EmissaoCteService {
@@ -77,6 +97,19 @@ export class EmissaoCteService {
       throw new BadRequestException('A NF-e não traz emitente ou destinatário completos.');
     }
 
+    const faltando = [
+      !nfe.emitente.endereco.codigoMunicipio && 'código do município do remetente',
+      !nfe.destinatario.endereco.codigoMunicipio && 'código do município do destinatário',
+      !nfe.emitente.endereco.cep && 'CEP do remetente',
+      !nfe.destinatario.endereco.cep && 'CEP do destinatário',
+    ].filter(Boolean);
+
+    if (faltando.length > 0) {
+      throw new BadRequestException(
+        `A NF-e não traz ${faltando.join(', ')}. A SEFAZ exige esses campos no CT-e.`,
+      );
+    }
+
     const ambiente = dto.ambiente ?? this.emissor.ambiente;
     const serie = dto.serie ?? this.emissor.serie;
     const numero = await this.numeracao.proximoNumero(ambiente, serie);
@@ -91,43 +124,20 @@ export class EmissaoCteService {
       cfop: dto.cfop ?? (nfe.emitente.uf === nfe.destinatario.uf ? '5353' : '6353'),
       naturezaOperacao: 'PRESTACAO DE SERVICO DE TRANSPORTE',
       tomador: dto.tomador ?? 3,
+      // Início e fim da prestação saem dos municípios da própria NF-e.
       inicio: {
-        codigoMunicipio: this.emissor.codigoMunicipioPadrao,
+        codigoMunicipio: nfe.emitente.endereco.codigoMunicipio ?? '',
         municipio: nfe.emitente.municipio ?? '',
         uf: nfe.emitente.uf ?? '',
       },
       fim: {
-        codigoMunicipio: this.emissor.codigoMunicipioPadrao,
+        codigoMunicipio: nfe.destinatario.endereco.codigoMunicipio ?? '',
         municipio: nfe.destinatario.municipio ?? '',
         uf: nfe.destinatario.uf ?? '',
       },
       emitente: this.emissor.emitente,
-      remetente: {
-        cnpjCpf: nfe.emitente.cnpjCpf,
-        nome: nfe.emitente.nome,
-        endereco: {
-          logradouro: 'NAO INFORMADO',
-          numero: 'S/N',
-          bairro: 'NAO INFORMADO',
-          codigoMunicipio: this.emissor.codigoMunicipioPadrao,
-          municipio: nfe.emitente.municipio ?? '',
-          cep: '00000000',
-          uf: nfe.emitente.uf ?? '',
-        },
-      },
-      destinatario: {
-        cnpjCpf: nfe.destinatario.cnpjCpf,
-        nome: nfe.destinatario.nome,
-        endereco: {
-          logradouro: 'NAO INFORMADO',
-          numero: 'S/N',
-          bairro: 'NAO INFORMADO',
-          codigoMunicipio: this.emissor.codigoMunicipioPadrao,
-          municipio: nfe.destinatario.municipio ?? '',
-          cep: '00000000',
-          uf: nfe.destinatario.uf ?? '',
-        },
-      },
+      remetente: participanteDaNfe(nfe.emitente),
+      destinatario: participanteDaNfe(nfe.destinatario),
       valorTotal: dto.valorFrete,
       valorReceber: dto.valorFrete,
       componentes: dto.componentes?.length

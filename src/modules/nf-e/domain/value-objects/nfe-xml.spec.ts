@@ -33,6 +33,16 @@ describe('parseNfeXml', () => {
     });
   });
 
+  it('le o endereco completo, exigido para emitir o CT-e', () => {
+    const nfe = parseNfeXml(XML_REMESSA);
+
+    expect(nfe.emitente?.endereco).toMatchObject({
+      municipio: 'BETIM',
+      uf: 'MG',
+    });
+    expect(nfe.destinatario?.endereco.municipio).toBe('RIO DE JANEIRO');
+  });
+
   it('le a transportadora, que e quem interessa para o frete', () => {
     const nfe = parseNfeXml(XML_REMESSA);
 
