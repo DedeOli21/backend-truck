@@ -9,6 +9,7 @@ import {
   Body,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -60,6 +61,29 @@ export class CteDocumentsController {
     });
   }
 
+  @Get(':chave/dacte')
+  @ApiOperation({
+    summary: 'Baixar DACTE (PDF) do CT-e',
+    description:
+      'Gera e retorna o PDF do DACTE (Documento Auxiliar do CT-e) com todos os dados do CT-e emitido ou importado.',
+  })
+  @ApiParam({ name: 'chave', example: '35260808789863000100570010000011471000000001' })
+  @ApiOkResponse({ description: 'PDF do DACTE gerado.' })
+  @ApiNotFoundResponse({ description: 'CT-e não encontrado.' })
+  async baixarDacte(
+    @Req() req: AuthenticatedRequest,
+    @Param('chave') chave: string,
+    @Res() res: any,
+  ) {
+    const pdf = await this.documentsService.gerarDacte(chave, req.user.sub);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="DACTE-${chave}.pdf"`,
+      'Content-Length': pdf.length,
+    });
+    res.end(pdf);
+  }
+
   @Get(':chave')
   @ApiOperation({ summary: 'Detalhar CT-e guardado' })
   @ApiParam({ name: 'chave', example: '35260808789863000100570010000011471000000001' })
@@ -68,8 +92,7 @@ export class CteDocumentsController {
   async detalhar(@Req() req: AuthenticatedRequest, @Param('chave') chave: string) {
     return this.documentsService.buscarPorChave(chave, req.user.sub);
   }
-
-  @Patch(':chave/vinculos')
+@Patch(':chave/vinculos')
   @ApiOperation({
     summary: 'Vincular CT-e a veículo, motorista ou frete',
     description:
