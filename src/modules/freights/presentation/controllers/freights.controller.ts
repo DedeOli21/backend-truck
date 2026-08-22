@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Body,
   Controller,
   Delete,
@@ -31,6 +32,7 @@ import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.interface';
+import { DriversService } from '@applications/drivers/application/services/drivers.service';
 import { FreightsService } from '@freights/application/services/freights.service';
 import { AlterarStatusDto } from '@freights/presentation/dtos/alterar-status.dto';
 import { AtualizarFreteDto } from '@freights/presentation/dtos/atualizar-frete.dto';
@@ -38,19 +40,58 @@ import { CriarFreteDoCteDto } from '@freights/presentation/dtos/criar-frete-do-c
 import { CriarFreteDto } from '@freights/presentation/dtos/criar-frete.dto';
 import { ListarFretesQuery } from '@freights/presentation/dtos/listar-fretes.query';
 
+/** Recorte impossível: não casa com nenhum motorista, então a lista volta vazia. */
+const SEM_MOTORISTA = '__sem-motorista__';
+
 @ApiTags('Fretes')
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou expirado.' })
 @ApiForbiddenResponse({ description: 'Rota restrita a ADMIN.' })
 @Controller('freights')
 @UseGuards(JwtAuthGuard, RolesGuard)
+// Motorista entra apenas nas rotas marcadas abaixo, e sempre limitado aos
+// fretes que são dele; o recorte é feito no controller, não pelo papel.
 @Roles('ADMIN')
 export class FreightsController {
-  constructor(@Inject(FreightsService) private readonly freightsService: FreightsService) {}
+  constructor(
+    @Inject(FreightsService) private readonly freightsService: FreightsService,
+    @Inject(DriversService) private readonly driversService: DriversService,
+  ) {}
 
   /** ADMIN vê a própria carteira; motorista vê a do gestor a que pertence. */
   private escopo(req: AuthenticatedRequest): Promise<string> {
     return this.freightsService.escopoDe({ userId: req.user.sub, role: req.user.role });
+  }
+
+  /**
+   * Motorista só enxerga frete atribuído a ele, mesmo pedindo o de outro.
+   * Sem vínculo com motorista nenhum, a lista volta vazia.
+   */
+  private async recorteDeMotorista(
+    req: AuthenticatedRequest,
+    driverIdPedido?: string,
+  ): Promise<string | undefined> {
+    if (req.user.role === 'ADMIN') {
+      return driverIdPedido;
+    }
+
+    return (await this.driversService.findIdByUserId(req.user.sub)) ?? SEM_MOTORISTA;
+  }
+
+  /** Frete de outro motorista não é dele para ver nem para mexer. */
+  private async assertMotoristaDoFrete(
+    req: AuthenticatedRequest,
+    driverIdDoFrete: string | null,
+  ): Promise<void> {
+    if (req.user.role === 'ADMIN') {
+      return;
+    }
+
+    const driverId = await this.driversService.findIdByUserId(req.user.sub);
+
+    if (!driverId || driverIdDoFrete !== driverId) {
+      throw new ForbiddenException('Este frete está atribuído a outro motorista.');
+    }
   }
 
   @Post('from-cte/:chave')
@@ -84,25 +125,34 @@ export class FreightsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar fretes', description: 'Do mais recente para o mais antigo.' })
+  @Roles('ADMIN', 'DRIVER')
+  @ApiOperation({
+    summary: 'Listar fretes',
+    description:
+      'Do mais recente para o mais antigo. Motorista recebe apenas os fretes atribuídos a ele, mesmo informando o `driverId` de outro.',
+  })
   @ApiOkResponse({ description: 'Lista de fretes.' })
   async listar(@Req() req: AuthenticatedRequest, @Query() query: ListarFretesQuery) {
     return this.freightsService.listar({
       ownerUserId: await this.escopo(req),
       status: query.status,
       truckId: query.truckId,
-      driverId: query.driverId,
+      driverId: await this.recorteDeMotorista(req, query.driverId),
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
     });
   }
 
   @Get(':id')
+  @Roles('ADMIN', 'DRIVER')
   @ApiOperation({ summary: 'Detalhar frete' })
   @ApiOkResponse({ description: 'Frete encontrado.' })
   @ApiNotFoundResponse({ description: 'Frete não encontrado.' })
   async detalhar(@Req() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
-    return this.freightsService.buscar(id, await this.escopo(req));
+    const frete = await this.freightsService.buscar(id, await this.escopo(req));
+    await this.assertMotoristaDoFrete(req, frete.driverId);
+
+    return frete;
   }
 
   @Patch(':id')
@@ -119,6 +169,7 @@ export class FreightsController {
   }
 
   @Patch(':id/status')
+  @Roles('ADMIN', 'DRIVER')
   @ApiOperation({
     summary: 'Alterar situação do frete',
     description:
@@ -132,12 +183,16 @@ export class FreightsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AlterarStatusDto,
   ) {
+    const escopo = await this.escopo(req);
+    const frete = await this.freightsService.buscar(id, escopo);
+    await this.assertMotoristaDoFrete(req, frete.driverId);
+
     // Quem mudou o status assina o evento na timeline do frete.
     return this.freightsService.alterarStatus(
       id,
       dto.status,
       req.user.sub,
-      await this.escopo(req),
+      escopo,
     );
   }
 
