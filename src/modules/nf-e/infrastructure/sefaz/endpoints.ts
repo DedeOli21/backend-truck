@@ -101,9 +101,10 @@ const SVRS_RECEPCAO = {
 };
 
 const RECEPCAO_CTE: Record<string, { producao: string; homologacao: string }> = {
+  // Conferido contra o WSDL: SP responde em CTeRecepcaoSincV4.asmx, com o V4.
   SP: {
-    producao: 'https://nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoSinc.asmx',
-    homologacao: 'https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoSinc.asmx',
+    producao: 'https://nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoSincV4.asmx',
+    homologacao: 'https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoSincV4.asmx',
   },
   MG: {
     producao: 'https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4',
