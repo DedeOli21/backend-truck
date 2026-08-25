@@ -120,9 +120,9 @@ export class EmissaoMdfeService {
       veiculo: {
         placa: truck.plate,
         rntrc: truck.rntrc ?? this.emissor.emitente.rntrc ?? '',
-        // Capacidade cadastrada em toneladas; o MDF-e pede em kg.
         tara: TARA_PADRAO_KG,
-        capacidadeKg: truck.capacity ? truck.capacity * 1000 : undefined,
+        // Capacidade já cadastrada em kg.
+        capacidadeKg: truck.capacity || undefined,
         uf: this.emissor.emitente.endereco.uf,
       },
       condutor: { nome: driver.fullName, cpf: driver.cpf },
