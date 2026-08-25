@@ -168,7 +168,9 @@ export const gerarMdfeXml = (dados: DadosMdfe): MdfeGerado => {
     `</rodo>` +
     `</infModal>`;
 
-  const chCteXml = dados.cteChaves.map((chave) => `<chCTe>${chave}</chCTe>`).join('');
+  const chCteXml = dados.cteChaves
+    .map((chave) => `<infCTe><chCTe>${chave}</chCTe></infCTe>`)
+    .join('');
 
   const infDoc =
     `<infDoc>` +

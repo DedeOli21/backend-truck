@@ -58,8 +58,12 @@ describe('gerarMdfeXml', () => {
     expect(xml).toContain('<placa>ABC1D23</placa>');
     expect(xml).toContain('<RNTRC>12345678</RNTRC>');
     expect(xml).toContain('<CPF>12345678909</CPF>');
-    expect(xml).toContain('<chCTe>35260808789863000100570010000011471000000001</chCTe>');
-    expect(xml).toContain('<chCTe>35260808789863000100570010000011481000000002</chCTe>');
+    expect(xml).toContain(
+      '<infCTe><chCTe>35260808789863000100570010000011471000000001</chCTe></infCTe>',
+    );
+    expect(xml).toContain(
+      '<infCTe><chCTe>35260808789863000100570010000011481000000002</chCTe></infCTe>',
+    );
     expect(xml).toContain('<qCTe>2</qCTe>');
     expect(xml).toContain('<vCarga>39587.01</vCarga>');
     expect(xml).toContain('<UFIni>SP</UFIni>');
