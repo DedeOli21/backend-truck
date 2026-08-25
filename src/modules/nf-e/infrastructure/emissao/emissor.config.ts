@@ -25,6 +25,7 @@ export const lerEmissorConfig = (env: NodeJS.ProcessEnv = process.env): EmissorC
     nome: env.CTE_EMIT_NOME ?? '',
     crt: (Number(env.CTE_EMIT_CRT) || 1) as 1 | 2 | 3,
     rntrc: env.CTE_EMIT_RNTRC ?? null,
+    fone: env.CTE_EMIT_FONE ?? null,
     endereco: {
       logradouro: env.CTE_EMIT_LOGRADOURO ?? '',
       numero: env.CTE_EMIT_NUMERO ?? 'S/N',
