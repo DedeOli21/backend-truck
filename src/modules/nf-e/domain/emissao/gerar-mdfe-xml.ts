@@ -160,14 +160,14 @@ export const gerarMdfeXml = (dados: DadosMdfe): MdfeGerado => {
     // estimativa a partir da capacidade até o cadastro de frota trazer o dado.
     `<tara>${Math.round(dados.veiculo.tara ?? (dados.veiculo.capacidadeKg ?? 10000) * 0.35)}</tara>` +
     (dados.veiculo.capacidadeKg ? `<capKG>${Math.round(dados.veiculo.capacidadeKg)}</capKG>` : '') +
-    `<tpRod>01</tpRod>` +
-    `<tpCar>00</tpCar>` +
-    `<UF>${dados.veiculo.uf}</UF>` +
-    `</veicTracao>` +
     `<condutor>` +
     `<xNome>${escapar(dados.condutor.nome)}</xNome>` +
     `<CPF>${somenteDigitos(dados.condutor.cpf)}</CPF>` +
     `</condutor>` +
+    `<tpRod>01</tpRod>` +
+    `<tpCar>00</tpCar>` +
+    `<UF>${dados.veiculo.uf}</UF>` +
+    `</veicTracao>` +
     `</rodo>` +
     `</infModal>`;
 
