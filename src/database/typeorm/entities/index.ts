@@ -21,6 +21,7 @@ export { FreightExpenseOrmEntity } from '@database/typeorm/entities/freight-expe
 export { FreightTimelineEventOrmEntity } from '@database/typeorm/entities/freight-timeline-event.orm-entity';
 export { FinancialTransactionOrmEntity } from '@database/typeorm/entities/financial-transaction.orm-entity';
 export { InvoiceOrmEntity } from '@database/typeorm/entities/invoice.orm-entity';
+export { MdfeDocumentOrmEntity } from '@database/typeorm/entities/mdfe-document.orm-entity';
 export {
   UserRole,
   TransactionDirection,

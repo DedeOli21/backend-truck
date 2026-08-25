@@ -21,6 +21,7 @@
       "@vehicle-expenses/*": ["src/modules/vehicle-expenses/*"],
       "@nf-e/*": ["src/modules/nf-e/*"],
       "@cte-documents/*": ["src/modules/cte-documents/*"],
+      "@mdfe-documents/*": ["src/modules/mdfe-documents/*"],
       "@freights/*": ["src/modules/freights/*"],
       "@transactions/*": ["src/modules/transactions/*"],
       "@finance/*": ["src/modules/finance/*"],

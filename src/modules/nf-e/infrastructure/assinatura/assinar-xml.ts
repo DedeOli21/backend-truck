@@ -6,11 +6,16 @@ import { CertificadoPem } from '@nf-e/infrastructure/assinatura/certificado';
  * RSA-SHA1, digest SHA-1 e canonicalização C14N, com Reference apontando para
  * o Id do infCte/infNFe. Qualquer desvio disso é rejeitado na recepção.
  */
-const RAIZ: Record<string, string> = { infCte: 'CTe', infNFe: 'NFe' };
+const RAIZ: Record<string, string> = {
+  infCte: 'CTe',
+  infNFe: 'NFe',
+  infMDFe: 'MDFe',
+  infEvento: 'evento',
+};
 
 export const assinarXml = (
   xml: string,
-  tagAssinada: 'infCte' | 'infNFe',
+  tagAssinada: 'infCte' | 'infNFe' | 'infMDFe' | 'infEvento',
   id: string,
   certificado: CertificadoPem,
 ): string => {

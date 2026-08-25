@@ -70,6 +70,6 @@ const isTest = process.env.NODE_ENV === 'test';
     // caso contrário responde de forma explícita que não consultou.
     { provide: NFE_PROVIDER, useFactory: () => criarNfeProvider() },
   ],
-  exports: [NfeService],
+  exports: [NfeService, TRANSMISSOR_SEFAZ, CERTIFICADO_EMISSAO, EMISSOR_CONFIG],
 })
 export class NfeModule {}
