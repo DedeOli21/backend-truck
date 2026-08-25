@@ -6,24 +6,24 @@
  * / MDFE_EVENTO_URL, se a SVRS mudar o domínio.
  */
 const RECEPCAO = {
-  producao: 'https://mdfe.svrs.rs.gov.br/ws/mdferecepcao/mdferecepcao.asmx',
-  homologacao: 'https://mdfe-homologacao.svrs.rs.gov.br/ws/mdferecepcao/mdferecepcao.asmx',
+  producao: 'https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx',
+  homologacao: 'https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx',
 };
 
 const RET_RECEPCAO = {
-  producao: 'https://mdfe.svrs.rs.gov.br/ws/mdferetrecepcao/mdferetrecepcao.asmx',
-  homologacao: 'https://mdfe-homologacao.svrs.rs.gov.br/ws/mdferetrecepcao/mdferetrecepcao.asmx',
+  producao: 'https://mdfe.svrs.rs.gov.br/ws/MDFeRetRecepcao/MDFeRetRecepcao.asmx',
+  homologacao: 'https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRetRecepcao/MDFeRetRecepcao.asmx',
 };
 
 const CONSULTA = {
-  producao: 'https://mdfe.svrs.rs.gov.br/ws/mdfeconsulta/mdfeconsulta.asmx',
-  homologacao: 'https://mdfe-homologacao.svrs.rs.gov.br/ws/mdfeconsulta/mdfeconsulta.asmx',
+  producao: 'https://mdfe.svrs.rs.gov.br/ws/MDFeConsulta/MDFeConsulta.asmx',
+  homologacao: 'https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeConsulta/MDFeConsulta.asmx',
 };
 
 const EVENTO = {
-  producao: 'https://mdfe.svrs.rs.gov.br/ws/mdferecepcaoevento/mdferecepcaoevento.asmx',
+  producao: 'https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx',
   homologacao:
-    'https://mdfe-homologacao.svrs.rs.gov.br/ws/mdferecepcaoevento/mdferecepcaoevento.asmx',
+    'https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx',
 };
 
 export const endpointRecepcaoMdfe = (ambiente: 1 | 2): string =>
