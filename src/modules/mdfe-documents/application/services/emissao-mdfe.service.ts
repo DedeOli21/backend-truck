@@ -140,7 +140,9 @@ export class EmissaoMdfeService {
       seguro: {
         responsavel: 1,
         seguradoraNome: this.emissor.seguro.seguradoraNome || 'SEM SEGURADORA CONTRATADA',
-        seguradoraCnpj: this.emissor.seguro.seguradoraCnpj || '00000000000000',
+        // CNPJ de teste com dígito verificador válido: um CNPJ inválido (ex.:
+        // só zeros) é rejeitado pela SEFAZ mesmo em homologação.
+        seguradoraCnpj: this.emissor.seguro.seguradoraCnpj || '11222333000181',
         apolice: this.emissor.seguro.apolice || '000000000',
       },
     };
