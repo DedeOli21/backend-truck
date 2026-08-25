@@ -183,7 +183,10 @@ export const gerarMdfeXml = (dados: DadosMdfe): MdfeGerado => {
 
   const seg =
     `<seg>` +
-    `<infResp><respSeg>${dados.seguro.responsavel}</respSeg></infResp>` +
+    `<infResp>` +
+    `<respSeg>${dados.seguro.responsavel}</respSeg>` +
+    `<CNPJ>${somenteDigitos(dados.emitente.cnpjCpf)}</CNPJ>` +
+    `</infResp>` +
     `<infSeg>` +
     `<xSeg>${escapar(dados.seguro.seguradoraNome)}</xSeg>` +
     `<CNPJ>${somenteDigitos(dados.seguro.seguradoraCnpj)}</CNPJ>` +
