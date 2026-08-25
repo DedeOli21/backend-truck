@@ -156,7 +156,10 @@ export const gerarMdfeXml = (dados: DadosMdfe): MdfeGerado => {
     `<infANTT><RNTRC>${somenteDigitos(dados.veiculo.rntrc)}</RNTRC></infANTT>` +
     `<veicTracao>` +
     `<placa>${dados.veiculo.placa.toUpperCase()}</placa>` +
-    (dados.veiculo.tara ? `<tara>${Math.round(dados.veiculo.tara)}</tara>` : '') +
+    // tara é obrigatória no schema; sem o peso vazio real do veículo, usa uma
+    // estimativa a partir da capacidade até o cadastro de frota trazer o dado.
+    `<tara>${Math.round(dados.veiculo.tara ?? (dados.veiculo.capacidadeKg ?? 10000) * 0.35)}</tara>` +
+    (dados.veiculo.capacidadeKg ? `<capKG>${Math.round(dados.veiculo.capacidadeKg)}</capKG>` : '') +
     `<tpRod>01</tpRod>` +
     `<tpCar>00</tpCar>` +
     `<UF>${dados.veiculo.uf}</UF>` +
