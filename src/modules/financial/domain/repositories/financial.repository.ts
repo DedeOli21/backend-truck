@@ -11,6 +11,8 @@ export interface FinancialTransactionFilters {
   type?: FinancialTransactionType;
   customerId?: string;
   freightId?: string;
+  /** Só lançamentos originados de CT-e. */
+  somenteCte?: boolean;
   /** Intervalo de vencimento, em ISO (YYYY-MM-DD). */
   from?: string;
   to?: string;
@@ -19,6 +21,11 @@ export interface FinancialTransactionFilters {
 export interface FinancialTransactionsRepository {
   create(transaction: FinancialTransactionEntity): Promise<FinancialTransactionEntity>;
   findById(id: string, ownerUserId: string): Promise<FinancialTransactionEntity | null>;
+  /** Lançamento já feito para esta chave de CT-e; garante que não se lança duas vezes. */
+  findByCteChave(
+    cteChave: string,
+    ownerUserId: string,
+  ): Promise<FinancialTransactionEntity | null>;
   list(filters: FinancialTransactionFilters): Promise<FinancialTransactionEntity[]>;
   update(id: string, transaction: FinancialTransactionEntity): Promise<FinancialTransactionEntity>;
   remove(id: string): Promise<void>;

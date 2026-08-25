@@ -29,6 +29,7 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.interface';
 import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
+import { FaturamentoCteService } from '@applications/financial/application/services/faturamento-cte.service';
 import { NfeService } from '@nf-e/application/services/nf-e.service';
 import {
   ConsultaNfeResponseDto,
@@ -50,6 +51,7 @@ export class CteController {
     @Inject(NfeService) private readonly nfeService: NfeService,
     @Inject(CteDocumentsService) private readonly documentsService: CteDocumentsService,
     @Inject(EmissaoCteService) private readonly emissaoService: EmissaoCteService,
+    @Inject(FaturamentoCteService) private readonly faturamento: FaturamentoCteService,
   ) {}
 
   @Get('qr/:chave')
@@ -113,7 +115,13 @@ export class CteController {
         valorTotalServico: dto.valorFrete,
       });
 
-      return { ...resultado, documento: salvo };
+      // O CT-e autorizado já vale como faturamento: lança em contas a receber
+      // com o valor exato da prestação. Falha aqui não derruba a emissão.
+      const faturamento = await this.faturamento.lancarAposEmissao(resultado.chave, req.user.sub, {
+        prazoDias: dto.prazoPagamentoDias,
+      });
+
+      return { ...resultado, documento: salvo, faturamento };
     }
 
     return resultado;

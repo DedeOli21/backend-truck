@@ -33,6 +33,8 @@ export interface FinancialTransactionResponse {
   customerId: string | null;
   supplierId: string | null;
   freightId: string | null;
+  /** Chave do CT-e que originou o lançamento, quando veio do faturamento automático. */
+  cteChave: string | null;
 }
 
 export interface CashFlowDay {
@@ -116,6 +118,7 @@ export class FinancialService {
       customerId: transaction.customerId,
       supplierId: transaction.supplierId,
       freightId: transaction.freightId,
+      cteChave: transaction.cteChave ?? null,
     };
   }
 
@@ -151,6 +154,7 @@ export class FinancialService {
       customerId: dto.customerId ?? null,
       supplierId: dto.supplierId ?? null,
       freightId: dto.freightId ?? null,
+      cteChave: null,
       createdAt: now,
       updatedAt: now,
     });

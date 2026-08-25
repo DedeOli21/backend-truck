@@ -45,6 +45,9 @@ export class FinancialTransactionOrmEntity {
   @Column({ name: 'freight_id', type: 'uuid', nullable: true })
   freightId!: string | null;
 
+  @Column({ name: 'cte_chave', type: 'varchar', length: 44, nullable: true })
+  cteChave!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

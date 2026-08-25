@@ -10,6 +10,7 @@ import {
   IsString,
   IsUUID,
   Length,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -58,6 +59,18 @@ export class EmitirCteDto {
   @IsOptional()
   @IsUUID()
   driverId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Prazo de pagamento, em dias, para a conta a receber lançada com a autorização do CT-e. ' +
+      'Zero vence no dia da autorização.',
+    default: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(365)
+  prazoPagamentoDias?: number;
 
   @ApiPropertyOptional({ example: 1, description: 'Série do CT-e. Padrão: 1.' })
   @IsOptional()

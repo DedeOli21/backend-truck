@@ -14,6 +14,8 @@ export class FinancialTransactionEntity {
   customerId!: string | null;
   supplierId!: string | null;
   freightId!: string | null;
+  /** Chave do CT-e que originou o lançamento; vazia quando o lançamento é manual. */
+  cteChave!: string | null;
   createdAt!: Date;
   updatedAt!: Date;
 

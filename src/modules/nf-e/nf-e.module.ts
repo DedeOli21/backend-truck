@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '@applications/auth/auth.module';
 import { CteDocumentsModule } from '@cte-documents/cte-documents.module';
+import { FinancialModule } from '@applications/financial/financial.module';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import {
@@ -26,7 +27,7 @@ import { NfeController } from '@nf-e/presentation/controllers/nf-e.controller';
 const isTest = process.env.NODE_ENV === 'test';
 
 @Module({
-  imports: [AuthModule, CteDocumentsModule],
+  imports: [AuthModule, CteDocumentsModule, FinancialModule],
   controllers: [NfeController, CteController],
   providers: [
     NfeService,

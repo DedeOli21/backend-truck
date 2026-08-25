@@ -23,6 +23,12 @@ import { InMemoryNumeracaoRepository } from '@nf-e/infrastructure/emissao/in-mem
 import { NUMERACAO_REPOSITORY } from '@nf-e/infrastructure/emissao/numeracao.repository';
 import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
 import { CteController } from '@nf-e/presentation/controllers/cte.controller';
+import { CustomersService } from '@applications/customers/application/services/customers.service';
+import { CUSTOMERS_REPOSITORY } from '@applications/customers/domain/repositories/customers.repository';
+import { InMemoryCustomersRepository } from '@applications/customers/infrastructure/repositories/in-memory-customers.repository';
+import { FaturamentoCteService } from '@applications/financial/application/services/faturamento-cte.service';
+import { FINANCIAL_TRANSACTIONS_REPOSITORY } from '@applications/financial/domain/repositories/financial.repository';
+import { InMemoryFinancialTransactionsRepository } from '@applications/financial/infrastructure/repositories/in-memory-financial.repository';
 
 const NFE_XML = `<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00"><NFe><infNFe Id="NFe31260836547966000271550030000464521319720980" versao="4.00"><ide><natOp>REMESSA</natOp><mod>55</mod><serie>3</serie><nNF>46452</nNF><dhEmi>2026-08-21T08:04:00-03:00</dhEmi></ide><emit><CNPJ>36547966000271</CNPJ><xNome>RAIZES INDUSTRIA</xNome><enderEmit><xLgr>R GRACYRA RESSE DE GOUVEIA</xLgr><nro>1791</nro><xBairro>JARDIM PIEMONT</xBairro><cMun>3106705</cMun><xMun>BETIM</xMun><UF>MG</UF><CEP>32689372</CEP></enderEmit></emit><dest><CNPJ>33000092003850</CNPJ><xNome>COSAN LUBRIFICANTES</xNome><enderDest><xLgr>AV PRAIA DA RIBEIRA</xLgr><nro>1</nro><xBairro>RIBEIRA</xBairro><cMun>3304557</cMun><xMun>RIO DE JANEIRO</xMun><UF>RJ</UF><CEP>21930050</CEP></enderDest></dest><det nItem="1"><prod><xProd>PALLET DE MADEIRA</xProd><qCom>20</qCom><vProd>689.40</vProd></prod></det><total><ICMSTot><vProd>689.40</vProd><vNF>689.40</vNF></ICMSTot></total><transp><vol><qVol>20</qVol><pesoB>500.000</pesoB></vol></transp></infNFe></NFe><protNFe><infProt><chNFe>31260836547966000271550030000464521319720980</chNFe><nProt>131267837206022</nProt><cStat>100</cStat></infProt></protNFe></nfeProc>`;
 
@@ -75,6 +81,13 @@ comCertificado('POST /cte/emitir', () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [CteController, CteDocumentsController],
       providers: [
+        FaturamentoCteService,
+        CustomersService,
+        { provide: CUSTOMERS_REPOSITORY, useClass: InMemoryCustomersRepository },
+        {
+          provide: FINANCIAL_TRANSACTIONS_REPOSITORY,
+          useClass: InMemoryFinancialTransactionsRepository,
+        },
         NfeService,
         CteDocumentsService,
         EmissaoCteService,

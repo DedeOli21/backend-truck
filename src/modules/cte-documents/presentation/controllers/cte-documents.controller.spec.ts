@@ -22,6 +22,12 @@ import { NfeService } from '@nf-e/application/services/nf-e.service';
 import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
 import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
 import { CteController } from '@nf-e/presentation/controllers/cte.controller';
+import { CustomersService } from '@applications/customers/application/services/customers.service';
+import { CUSTOMERS_REPOSITORY } from '@applications/customers/domain/repositories/customers.repository';
+import { InMemoryCustomersRepository } from '@applications/customers/infrastructure/repositories/in-memory-customers.repository';
+import { FaturamentoCteService } from '@applications/financial/application/services/faturamento-cte.service';
+import { FINANCIAL_TRANSACTIONS_REPOSITORY } from '@applications/financial/domain/repositories/financial.repository';
+import { InMemoryFinancialTransactionsRepository } from '@applications/financial/infrastructure/repositories/in-memory-financial.repository';
 
 const CHAVE = '35260808789863000100570010000011471000000001';
 const TRUCK = '11111111-1111-4111-8111-111111111111';
@@ -35,6 +41,13 @@ describe('Persistência de CT-e (rotas)', () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [CteDocumentsController, CteController],
       providers: [
+        FaturamentoCteService,
+        CustomersService,
+        { provide: CUSTOMERS_REPOSITORY, useClass: InMemoryCustomersRepository },
+        {
+          provide: FINANCIAL_TRANSACTIONS_REPOSITORY,
+          useClass: InMemoryFinancialTransactionsRepository,
+        },
         CteDocumentsService,
         NfeService,
         EmissaoCteService,

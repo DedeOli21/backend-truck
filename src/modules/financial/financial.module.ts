@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '@applications/auth/auth.module';
+import { CteDocumentsModule } from '@cte-documents/cte-documents.module';
+import { CustomersModule } from '@applications/customers/customers.module';
 import { FreightsModule } from '@freights/freights.module';
 import { FinancialTransactionOrmEntity } from '@database/typeorm/entities/financial-transaction.orm-entity';
 import { InvoiceOrmEntity } from '@database/typeorm/entities/invoice.orm-entity';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { FaturamentoCteService } from '@applications/financial/application/services/faturamento-cte.service';
 import { FinancialService } from '@applications/financial/application/services/financial.service';
 import {
   FINANCIAL_TRANSACTIONS_REPOSITORY,
@@ -27,6 +30,8 @@ const isTest = process.env.NODE_ENV === 'test';
   imports: [
     AuthModule,
     FreightsModule,
+    CteDocumentsModule,
+    CustomersModule,
     ...(isTest
       ? []
       : [TypeOrmModule.forFeature([FinancialTransactionOrmEntity, InvoiceOrmEntity])]),
@@ -34,6 +39,7 @@ const isTest = process.env.NODE_ENV === 'test';
   controllers: [FinancialController],
   providers: [
     FinancialService,
+    FaturamentoCteService,
     JwtAuthGuard,
     RolesGuard,
     {
@@ -47,6 +53,6 @@ const isTest = process.env.NODE_ENV === 'test';
       useClass: isTest ? InMemoryInvoicesRepository : PostgresInvoicesRepository,
     },
   ],
-  exports: [FinancialService],
+  exports: [FinancialService, FaturamentoCteService],
 })
 export class FinancialModule {}

@@ -19,6 +19,12 @@ import { NFE_PROVIDER } from '@nf-e/domain/providers/nfe.provider';
 import { NotConfiguredNfeProvider } from '@nf-e/infrastructure/providers/not-configured-nfe.provider';
 import { CteController } from '@nf-e/presentation/controllers/cte.controller';
 import { NfeController } from '@nf-e/presentation/controllers/nf-e.controller';
+import { CustomersService } from '@applications/customers/application/services/customers.service';
+import { CUSTOMERS_REPOSITORY } from '@applications/customers/domain/repositories/customers.repository';
+import { InMemoryCustomersRepository } from '@applications/customers/infrastructure/repositories/in-memory-customers.repository';
+import { FaturamentoCteService } from '@applications/financial/application/services/faturamento-cte.service';
+import { FINANCIAL_TRANSACTIONS_REPOSITORY } from '@applications/financial/domain/repositories/financial.repository';
+import { InMemoryFinancialTransactionsRepository } from '@applications/financial/infrastructure/repositories/in-memory-financial.repository';
 
 // Chave real do DACTE de exemplo (CT-e 1147, série 1, emitente 08789863000100).
 const CHAVE_CTE = '35260808789863000100570010000011471000000001';
@@ -32,6 +38,13 @@ describe('CteController (rotas)', () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [CteController, NfeController],
       providers: [
+        FaturamentoCteService,
+        CustomersService,
+        { provide: CUSTOMERS_REPOSITORY, useClass: InMemoryCustomersRepository },
+        {
+          provide: FINANCIAL_TRANSACTIONS_REPOSITORY,
+          useClass: InMemoryFinancialTransactionsRepository,
+        },
         NfeService,
         EmissaoCteService,
         { provide: EMISSOR_CONFIG, useFactory: () => lerEmissorConfig({}) },

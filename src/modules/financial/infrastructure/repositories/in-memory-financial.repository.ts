@@ -21,12 +21,24 @@ export class InMemoryFinancialTransactionsRepository implements FinancialTransac
     return transaction && transaction.ownerUserId === ownerUserId ? transaction : null;
   }
 
+  async findByCteChave(
+    cteChave: string,
+    ownerUserId: string,
+  ): Promise<FinancialTransactionEntity | null> {
+    return (
+      [...this.transactions.values()].find(
+        (item) => item.cteChave === cteChave && item.ownerUserId === ownerUserId,
+      ) ?? null
+    );
+  }
+
   async list(filters: FinancialTransactionFilters): Promise<FinancialTransactionEntity[]> {
     return [...this.transactions.values()]
       .filter((item) => item.ownerUserId === filters.ownerUserId)
       .filter((item) => !filters.type || item.type === filters.type)
       .filter((item) => !filters.customerId || item.customerId === filters.customerId)
       .filter((item) => !filters.freightId || item.freightId === filters.freightId)
+      .filter((item) => !filters.somenteCte || Boolean(item.cteChave))
       .filter((item) => !filters.from || item.dueDate >= filters.from)
       .filter((item) => !filters.to || item.dueDate <= filters.to)
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate));

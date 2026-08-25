@@ -28,6 +28,12 @@ import { CteController } from '@nf-e/presentation/controllers/cte.controller';
 import { AuthService } from '@applications/auth/application/services/auth.service';
 import { FREIGHT_TIMELINE_REPOSITORY } from '@applications/freight-expenses/domain/repositories/freight-timeline.repository';
 import { InMemoryFreightTimelineRepository } from '@applications/freight-expenses/infrastructure/repositories/in-memory-freight-timeline.repository';
+import { CustomersService } from '@applications/customers/application/services/customers.service';
+import { CUSTOMERS_REPOSITORY } from '@applications/customers/domain/repositories/customers.repository';
+import { InMemoryCustomersRepository } from '@applications/customers/infrastructure/repositories/in-memory-customers.repository';
+import { FaturamentoCteService } from '@applications/financial/application/services/faturamento-cte.service';
+import { FINANCIAL_TRANSACTIONS_REPOSITORY } from '@applications/financial/domain/repositories/financial.repository';
+import { InMemoryFinancialTransactionsRepository } from '@applications/financial/infrastructure/repositories/in-memory-financial.repository';
 
 const ADMIN_USER = '33333333-3333-4333-8333-333333333333';
 const CHAVE = '35260808789863000100570010000011471000000001';
@@ -53,6 +59,13 @@ describe('Fluxo CT-e → frete (rotas)', () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [FreightsController, CteController, CteDocumentsController],
       providers: [
+        FaturamentoCteService,
+        CustomersService,
+        { provide: CUSTOMERS_REPOSITORY, useClass: InMemoryCustomersRepository },
+        {
+          provide: FINANCIAL_TRANSACTIONS_REPOSITORY,
+          useClass: InMemoryFinancialTransactionsRepository,
+        },
         FreightsService,
         CteDocumentsService,
         NfeService,

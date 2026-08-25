@@ -11,6 +11,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -26,15 +27,19 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { Roles } from '@common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { AuthenticatedRequest } from '@common/interfaces/authenticated-request.interface';
+import { FaturamentoCteService } from '@applications/financial/application/services/faturamento-cte.service';
 import { FinancialService } from '@applications/financial/application/services/financial.service';
 import { CreateFinancialTransactionDto } from '@applications/financial/presentation/dtos/create-financial-transaction.dto';
 import { GenerateInvoiceDto } from '@applications/financial/presentation/dtos/generate-invoice.dto';
 import { ListFinancialTransactionsQuery } from '@applications/financial/presentation/dtos/list-financial-transactions.query';
 import { SettleFinancialTransactionDto } from '@applications/financial/presentation/dtos/settle-financial-transaction.dto';
+import { LancarCteDto } from '@applications/financial/presentation/dtos/lancar-cte.dto';
+import { SincronizarCteDto } from '@applications/financial/presentation/dtos/sincronizar-cte.dto';
 
 @ApiTags('Financeiro')
 @ApiBearerAuth('access-token')
@@ -45,7 +50,81 @@ import { SettleFinancialTransactionDto } from '@applications/financial/presentat
 // Cada gestor só enxerga o próprio financeiro: o recorte é feito no service pelo dono.
 @Roles('ADMIN')
 export class FinancialController {
-  constructor(@Inject(FinancialService) private readonly service: FinancialService) {}
+  constructor(
+    @Inject(FinancialService) private readonly service: FinancialService,
+    @Inject(FaturamentoCteService) private readonly faturamento: FaturamentoCteService,
+  ) {}
+
+  @Post('receivables/from-cte/:chave')
+  @ApiOperation({
+    summary: 'Lançar o valor do CT-e em contas a receber',
+    description:
+      'Pega o valor da prestação do CT-e autorizado e cria a conta a receber, sem redigitação. ' +
+      'O valor é o do CT-e, exato. CT-e pendente ou rejeitado é recusado. Rodar de novo na mesma ' +
+      'chave atualiza o lançamento em vez de duplicar.',
+  })
+  @ApiCreatedResponse({ description: 'Lançamento criado ou atualizado.' })
+  @ApiBadRequestResponse({ description: 'CT-e não autorizado ou sem valor de prestação.' })
+  @ApiNotFoundResponse({ description: 'CT-e não encontrado.' })
+  async lancarDoCte(
+    @Req() req: AuthenticatedRequest,
+    @Param('chave') chave: string,
+    @Body() dto: LancarCteDto,
+  ) {
+    return this.faturamento.lancarDoCte(chave, req.user.sub, dto);
+  }
+
+  @Post('receivables/sync-cte')
+  @ApiOperation({
+    summary: 'Sincronizar faturamento dos CT-e autorizados',
+    description:
+      'Varre os CT-e do período e lança em contas a receber os que estão autorizados e ainda não ' +
+      'foram faturados. Os já lançados têm o valor conferido com o do CT-e.',
+  })
+  @ApiCreatedResponse({ description: 'Resumo da sincronização.' })
+  async sincronizarCte(@Req() req: AuthenticatedRequest, @Body() dto: SincronizarCteDto) {
+    return this.faturamento.sincronizar(req.user.sub, dto);
+  }
+
+  @Get('receivables/export.csv')
+  @ApiOperation({
+    summary: 'Exportar contas a receber em CSV',
+    description:
+      'Planilha de faturamento pronta para Excel ou Google Sheets em pt-BR (separador ";" e ' +
+      'vírgula decimal), com CT-e, valor, datas e cliente.',
+  })
+  @ApiQuery({ name: 'from', required: false, description: 'Vencimento a partir de (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'to', required: false, description: 'Vencimento até (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'somenteCte',
+    required: false,
+    description: 'true devolve apenas os lançamentos originados de CT-e.',
+  })
+  @ApiOkResponse({ description: 'CSV das contas a receber.' })
+  async exportarCsv(
+    @Req() req: AuthenticatedRequest,
+    @Res() res: Response,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('somenteCte') somenteCte?: string,
+  ) {
+    const csv = await this.faturamento.exportarCsv(req.user.sub, {
+      from,
+      to,
+      somenteCte: somenteCte === 'true',
+    });
+    // BOM: sem ele o Excel abre os acentos errados.
+    const corpo = `\uFEFF${csv}`;
+
+    res.set({
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="contas-a-receber-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv"`,
+      'Content-Length': Buffer.byteLength(corpo, 'utf-8'),
+    });
+    res.send(corpo);
+  }
 
   @Post('transactions')
   @ApiOperation({ summary: 'Lançar conta a pagar ou a receber' })

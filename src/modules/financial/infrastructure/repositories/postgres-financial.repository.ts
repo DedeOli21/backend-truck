@@ -32,6 +32,7 @@ export class PostgresFinancialTransactionsRepository implements FinancialTransac
       customerId: row.customerId,
       supplierId: row.supplierId,
       freightId: row.freightId,
+      cteChave: row.cteChave,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });
@@ -50,6 +51,7 @@ export class PostgresFinancialTransactionsRepository implements FinancialTransac
       customerId: transaction.customerId,
       supplierId: transaction.supplierId,
       freightId: transaction.freightId,
+      cteChave: transaction.cteChave,
     };
   }
 
@@ -60,6 +62,14 @@ export class PostgresFinancialTransactionsRepository implements FinancialTransac
 
   async findById(id: string, ownerUserId: string): Promise<FinancialTransactionEntity | null> {
     const row = await this.repository.findOne({ where: { id, ownerUserId } });
+    return row ? this.toDomain(row) : null;
+  }
+
+  async findByCteChave(
+    cteChave: string,
+    ownerUserId: string,
+  ): Promise<FinancialTransactionEntity | null> {
+    const row = await this.repository.findOne({ where: { cteChave, ownerUserId } });
     return row ? this.toDomain(row) : null;
   }
 
@@ -78,6 +88,10 @@ export class PostgresFinancialTransactionsRepository implements FinancialTransac
 
     if (filters.freightId) {
       query.andWhere('transaction.freight_id = :freightId', { freightId: filters.freightId });
+    }
+
+    if (filters.somenteCte) {
+      query.andWhere('transaction.cte_chave IS NOT NULL');
     }
 
     if (filters.from) {
