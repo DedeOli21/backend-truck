@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import {
   CteDocumentsService,
   resolverEmitenteDacte,
+  resolverParticipanteDacte,
 } from '@cte-documents/application/services/cte-documents.service';
 import { InMemoryCteDocumentsRepository } from '@cte-documents/infrastructure/repositories/in-memory-cte-documents.repository';
 import { CteImportado } from '@nf-e/domain/value-objects/cte-xml';
@@ -226,5 +227,47 @@ describe('resolverEmitenteDacte', () => {
     expect(emitente.municipio).toBe('OUTRA CIDADE');
     expect(emitente.uf).toBe('MG');
     expect(emitente.crt).toBe('2');
+  });
+});
+
+describe('resolverParticipanteDacte', () => {
+  it('preenche endereço, IE e fone quando o XML traz o bloco do participante', () => {
+    const participante = resolverParticipanteDacte(
+      'MEIWA INDUSTRIA E COMERCIO LTDA',
+      '55078307000105',
+      {
+        ie: '188012385116',
+        telefone: '',
+        logradouro: 'RODOVIA PRESIDENTE DUTRA 203,6',
+        bairro: 'PORTAO',
+        cep: '07400-000',
+        municipio: 'ARUJA',
+        uf: 'SP',
+        crt: '',
+      },
+      'ARUJA',
+      'SP',
+    );
+
+    expect(participante.logradouro).toBe('RODOVIA PRESIDENTE DUTRA 203,6');
+    expect(participante.ie).toBe('188012385116');
+    expect(participante.cep).toBe('07400-000');
+    expect(participante.municipio).toBe('ARUJA');
+  });
+
+  it('sem XML, mostra só nome e CNPJ — não inventa endereço', () => {
+    const participante = resolverParticipanteDacte(
+      'MEIWA INDUSTRIA E COMERCIO LTDA',
+      '55078307000105',
+      null,
+      'ARUJA',
+      'SP',
+    );
+
+    expect(participante.nome).toBe('MEIWA INDUSTRIA E COMERCIO LTDA');
+    expect(participante.logradouro).toBe('');
+    expect(participante.ie).toBe('');
+    expect(participante.municipio).toBe('ARUJA');
+    expect(participante.uf).toBe('SP');
   });
 });

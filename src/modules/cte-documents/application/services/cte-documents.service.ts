@@ -35,31 +35,41 @@ const tagXml = (xml: string, bloco: string, tag: string): string => {
 };
 
 /**
- * Endereço, IE e telefone do emitente ficam em <emit>, que o parse do CT-e não
- * carrega. Sem eles o DACTE sai com o bloco do emitente pela metade.
+ * Endereço, IE e telefone de um participante (emit/rem/dest) ficam dentro do
+ * seu próprio bloco, que o parse geral do CT-e (cte-xml.ts) não carrega —
+ * só guarda nome e CNPJ/CPF. Sem isso o DACTE sai com o bloco pela metade,
+ * mesmo quando o dado está no XML.
  */
-const extrairEmitente = (xml: string | null | undefined) => {
+const extrairParticipante = (
+  xml: string | null | undefined,
+  bloco: string,
+  enderTag: string,
+) => {
   if (!xml) return null;
 
-  const emit = /<emit>([\s\S]*?)<\/emit>/.exec(xml)?.[1];
-  if (!emit) return null;
+  const conteudo = new RegExp(`<${bloco}>([\\s\\S]*?)</${bloco}>`).exec(xml)?.[1];
+  if (!conteudo) return null;
 
-  const campo = (tag: string) => new RegExp(`<${tag}>([^<]*)</${tag}>`).exec(emit)?.[1]?.trim() ?? '';
-  const numero = tagXml(emit, 'enderEmit', 'nro');
-  const logradouro = tagXml(emit, 'enderEmit', 'xLgr');
-  const cep = tagXml(emit, 'enderEmit', 'CEP');
+  const campo = (tag: string) =>
+    new RegExp(`<${tag}>([^<]*)</${tag}>`).exec(conteudo)?.[1]?.trim() ?? '';
+  const numero = tagXml(conteudo, enderTag, 'nro');
+  const logradouro = tagXml(conteudo, enderTag, 'xLgr');
+  const cep = tagXml(conteudo, enderTag, 'CEP');
 
   return {
     ie: campo('IE'),
-    telefone: tagXml(emit, 'enderEmit', 'fone'),
+    telefone: tagXml(conteudo, enderTag, 'fone'),
     logradouro: [logradouro, numero].filter(Boolean).join(' '),
-    bairro: tagXml(emit, 'enderEmit', 'xBairro'),
+    bairro: tagXml(conteudo, enderTag, 'xBairro'),
     cep: cep.replace(/^(\d{5})(\d{3})$/, '$1-$2'),
-    municipio: tagXml(emit, 'enderEmit', 'xMun'),
-    uf: tagXml(emit, 'enderEmit', 'UF'),
+    municipio: tagXml(conteudo, enderTag, 'xMun'),
+    uf: tagXml(conteudo, enderTag, 'UF'),
     crt: campo('CRT'),
   };
 };
+
+const extrairEmitente = (xml: string | null | undefined) =>
+  extrairParticipante(xml, 'emit', 'enderEmit');
 
 const preferir = <T>(novo: T | null | undefined, atual: T | null | undefined): T | null =>
   novo === null || novo === undefined || novo === '' ? (atual ?? null) : novo;
@@ -100,6 +110,30 @@ export const resolverEmitenteDacte = (
     crt: (crt ?? (ehNossoEmitente ? String(config.crt) : '1')) as '1' | '2' | '3',
   };
 };
+
+/**
+ * Endereço, IE e fone de remetente/destinatário/tomador para o DACTE. O XML
+ * é a única fonte — sem ele, mostra só nome e CNPJ (nada de endereço
+ * inventado). O tomador, quando indicado por código (toma3), é uma das
+ * outras partes já presentes no XML; casa pelo CNPJ salvo no documento.
+ */
+export const resolverParticipanteDacte = (
+  nome: string | null,
+  cnpjCpf: string | null,
+  extraido: ReturnType<typeof extrairParticipante>,
+  municipioFallback: string,
+  ufFallback: string,
+) => ({
+  nome: nome ?? '',
+  cnpjCpf: cnpjCpf ?? '',
+  ie: extraido?.ie ?? '',
+  logradouro: extraido?.logradouro ?? '',
+  bairro: extraido?.bairro ?? '',
+  cep: extraido?.cep ?? '',
+  municipio: extraido?.municipio || municipioFallback,
+  uf: extraido?.uf || ufFallback,
+  fone: extraido?.telefone ?? '',
+});
 
 @Injectable()
 export class CteDocumentsService {
@@ -390,27 +424,30 @@ async gerarDacte(chave: string, ownerUserId?: string): Promise<Buffer> {
       emitidoEm: (documento.emitidoEm ?? new Date()).toISOString(),
       emitente,
       logo: logoEmitente(),
-      remetente: {
-        nome: documento.remetenteNome ?? '',
-        cnpjCpf: documento.remetenteDocumento ?? '',
-        ie: '', logradouro: '', bairro: '',
-        municipio: (documento.origem?.split(' - ')?.[1]) ?? '',
-        cep: '', uf: documento.uf, fone: '',
-      },
-      destinatario: {
-        nome: documento.destinatarioNome ?? '',
-        cnpjCpf: documento.destinatarioDocumento ?? '',
-        ie: '', logradouro: '', bairro: '',
-        municipio: (documento.destino?.split(' - ')?.[1]) ?? '',
-        cep: '', uf: '', fone: '',
-      },
-      tomador: {
-        nome: documento.tomadorNome ?? documento.destinatarioNome ?? '',
-        cnpjCpf: documento.tomadorDocumento ?? documento.destinatarioDocumento ?? '',
-        ie: '', logradouro: '', bairro: '',
-        municipio: (documento.destino?.split(' - ')?.[1]) ?? '',
-        cep: '', uf: '', fone: '',
-      },
+      remetente: resolverParticipanteDacte(
+        documento.remetenteNome,
+        documento.remetenteDocumento,
+        extrairParticipante(documento.xml, 'rem', 'enderReme'),
+        documento.origem?.split(' - ')?.[1] ?? '',
+        documento.uf,
+      ),
+      destinatario: resolverParticipanteDacte(
+        documento.destinatarioNome,
+        documento.destinatarioDocumento,
+        extrairParticipante(documento.xml, 'dest', 'enderDest'),
+        documento.destino?.split(' - ')?.[1] ?? '',
+        '',
+      ),
+      tomador: resolverParticipanteDacte(
+        documento.tomadorNome ?? documento.destinatarioNome,
+        documento.tomadorDocumento ?? documento.destinatarioDocumento,
+        extrairParticipante(documento.xml, 'toma4', 'enderToma') ??
+          (documento.tomadorDocumento === documento.remetenteDocumento
+            ? extrairParticipante(documento.xml, 'rem', 'enderReme')
+            : extrairParticipante(documento.xml, 'dest', 'enderDest')),
+        documento.destino?.split(' - ')?.[1] ?? '',
+        '',
+      ),
       origem: documento.origem ?? '',
       destino: documento.destino ?? '',
       valorTotalServico: documento.valorTotalServico ?? 0,
