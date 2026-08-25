@@ -220,8 +220,8 @@ export const gerarMdfeXml = (dados: DadosMdfe): MdfeGerado => {
     ide +
     emit +
     infModal +
-    seg +
     infDoc +
+    seg +
     tot +
     `</infMDFe>` +
     `</MDFe>`;
