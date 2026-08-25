@@ -23,6 +23,7 @@ import { DriverReferenceContactOrmEntity } from '@database/typeorm/entities/driv
 import { DriverAuditLogOrmEntity } from '@database/typeorm/entities/driver-audit-log.orm-entity';
 import { DriverPaymentOrmEntity } from '@database/typeorm/entities/driver-payment.orm-entity';
 import { DriverPaymentAuditLogOrmEntity } from '@database/typeorm/entities/driver-payment-audit-log.orm-entity';
+import { MdfeDocumentOrmEntity } from '@database/typeorm/entities/mdfe-document.orm-entity';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -62,6 +63,7 @@ const isTest = process.env.NODE_ENV === 'test';
               FreightTimelineEventOrmEntity,
               FinancialTransactionOrmEntity,
               InvoiceOrmEntity,
+              MdfeDocumentOrmEntity,
             ],
             synchronize: false,
             ssl:
