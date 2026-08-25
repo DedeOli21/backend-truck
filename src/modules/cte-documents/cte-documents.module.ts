@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '@applications/auth/auth.module';
+import { EMISSOR_CONFIG, lerEmissorConfig } from '@nf-e/infrastructure/emissao/emissor.config';
 import { CteDocumentOrmEntity } from '@database/typeorm/entities/cte-document.orm-entity';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -19,6 +20,7 @@ const isTest = process.env.NODE_ENV === 'test';
     CteDocumentsService,
     JwtAuthGuard,
     RolesGuard,
+    { provide: EMISSOR_CONFIG, useFactory: () => lerEmissorConfig() },
     {
       provide: CTE_DOCUMENTS_REPOSITORY,
       useClass: isTest ? InMemoryCteDocumentsRepository : PostgresCteDocumentsRepository,

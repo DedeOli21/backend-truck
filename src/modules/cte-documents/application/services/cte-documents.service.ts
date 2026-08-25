@@ -11,6 +11,7 @@ import { CteImportado, parseCteXml } from '@nf-e/domain/value-objects/cte-xml';
 import { DacteExtraido } from '@nf-e/infrastructure/dacte/dacte-parser';
 import { gerarDactePdf, DadosDacte } from '@nf-e/infrastructure/dacte/dacte-pdf.service';
 import { logoEmitente } from '@nf-e/infrastructure/dacte/logo';
+import { EMISSOR_CONFIG, EmissorConfig } from '@nf-e/infrastructure/emissao/emissor.config';
 export interface VinculoCte {
   truckId?: string | null;
   driverId?: string | null;
@@ -63,10 +64,48 @@ const extrairEmitente = (xml: string | null | undefined) => {
 const preferir = <T>(novo: T | null | undefined, atual: T | null | undefined): T | null =>
   novo === null || novo === undefined || novo === '' ? (atual ?? null) : novo;
 
+/**
+ * Dados do emitente para o DACTE. Quando o CT-e é nosso (mesmo CNPJ
+ * configurado no emissor) e o XML guardado não trouxe o bloco <emit>
+ * completo (import por PDF/chave), os dados reais da empresa vêm da config
+ * — nunca de um placeholder genérico nem da cidade da viagem. CT-e de outro
+ * emitente (importado de terceiro) mantém o fallback neutro: não temos o
+ * endereço dele para inventar.
+ */
+export const resolverEmitenteDacte = (
+  documento: Pick<CteDocumentEntity, 'cnpjEmitente' | 'rntrc' | 'uf'>,
+  cteDoXml: CteImportado | null,
+  doXml: ReturnType<typeof extrairEmitente>,
+  config: EmissorConfig['emitente'],
+) => {
+  const ehNossoEmitente =
+    documento.cnpjEmitente.replace(/\D/g, '') === config.cnpjCpf.replace(/\D/g, '');
+  const cepConfig = config.endereco.cep.replace(/\D/g, '').replace(/^(\d{5})(\d{3})$/, '$1-$2');
+  const logradouroConfig = [config.endereco.logradouro, config.endereco.numero]
+    .filter(Boolean)
+    .join(' ');
+  const crt = doXml?.crt === '3' ? '3' : doXml?.crt === '2' ? '2' : doXml?.crt === '1' ? '1' : null;
+
+  return {
+    nome: cteDoXml?.emitente?.nome || (ehNossoEmitente ? config.nome : 'EMITENTE'),
+    cnpj: documento.cnpjEmitente,
+    ie: doXml?.ie || (ehNossoEmitente ? config.inscricaoEstadual : '') || 'ISENTO',
+    rntrc: cteDoXml?.rntrc || documento.rntrc || (ehNossoEmitente ? config.rntrc : '') || '',
+    telefone: doXml?.telefone || (ehNossoEmitente ? config.fone : '') || '',
+    logradouro: doXml?.logradouro || (ehNossoEmitente ? logradouroConfig : '') || '',
+    bairro: doXml?.bairro || (ehNossoEmitente ? config.endereco.bairro : '') || '',
+    cep: doXml?.cep || (ehNossoEmitente ? cepConfig : '') || '',
+    municipio: doXml?.municipio || (ehNossoEmitente ? config.endereco.municipio : '') || '',
+    uf: doXml?.uf || (ehNossoEmitente ? config.endereco.uf : documento.uf),
+    crt: (crt ?? (ehNossoEmitente ? String(config.crt) : '1')) as '1' | '2' | '3',
+  };
+};
+
 @Injectable()
 export class CteDocumentsService {
   constructor(
     @Inject(CTE_DOCUMENTS_REPOSITORY) private readonly repository: CteDocumentsRepository,
+    @Inject(EMISSOR_CONFIG) private readonly emissor: EmissorConfig,
   ) {}
 
   private async upsert(
@@ -331,21 +370,7 @@ async gerarDacte(chave: string, ownerUserId?: string): Promise<Buffer> {
     }
 
     const doXml = extrairEmitente(documento.xml);
-    const crt = doXml?.crt === '3' ? '3' : doXml?.crt === '2' ? '2' : '1';
-
-    const emitente = {
-      nome: cteDoXml?.emitente?.nome ?? 'EMITENTE',
-      cnpj: documento.cnpjEmitente,
-      ie: doXml?.ie || 'ISENTO',
-      rntrc: cteDoXml?.rntrc ?? documento.rntrc ?? '',
-      telefone: doXml?.telefone ?? '',
-      logradouro: doXml?.logradouro ?? '',
-      bairro: doXml?.bairro ?? '',
-      cep: doXml?.cep ?? '',
-      municipio: doXml?.municipio || (documento.origem?.split(' - ')?.[1]) || '',
-      uf: doXml?.uf || documento.uf,
-      crt: crt as '1' | '2' | '3',
-    };
+    const emitente = resolverEmitenteDacte(documento, cteDoXml, doXml, this.emissor.emitente);
 
     const notasFiscais = (documento.notasFiscais ?? []).map(chaveNf => {
       let cnpj = '00000000000000'; let num = 0; let ser = 0;

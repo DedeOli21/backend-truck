@@ -1,11 +1,39 @@
 import { NotFoundException } from '@nestjs/common';
-import { CteDocumentsService } from '@cte-documents/application/services/cte-documents.service';
+import {
+  CteDocumentsService,
+  resolverEmitenteDacte,
+} from '@cte-documents/application/services/cte-documents.service';
 import { InMemoryCteDocumentsRepository } from '@cte-documents/infrastructure/repositories/in-memory-cte-documents.repository';
 import { CteImportado } from '@nf-e/domain/value-objects/cte-xml';
+import { EmissorConfig } from '@nf-e/infrastructure/emissao/emissor.config';
 
 const GESTOR = '99999999-9999-4999-8999-999999999999';
 
 const CHAVE = '35260808789863000100570010000011471000000001';
+
+const emissor = (): EmissorConfig => ({
+  ambiente: 2,
+  serie: 1,
+  codigoMunicipioPadrao: '3534401',
+  emitente: {
+    cnpjCpf: '08789863000100',
+    inscricaoEstadual: '125767078113',
+    nome: 'J M DE OLIVEIRA - CARGAS - ME',
+    crt: 1,
+    rntrc: '56299277',
+    fone: '(35) 99201-3225',
+    endereco: {
+      logradouro: 'Rua gilson nardoni rodrigues',
+      numero: '9',
+      bairro: 'Jardim bonanca',
+      codigoMunicipio: '3534401',
+      municipio: 'Osasco',
+      cep: '06266180',
+      uf: 'SP',
+    },
+  },
+  seguro: { seguradoraNome: '', seguradoraCnpj: '', apolice: '' },
+});
 
 const importado = (over: Partial<CteImportado> = {}): CteImportado => ({
   chave: CHAVE,
@@ -40,7 +68,7 @@ describe('CteDocumentsService', () => {
 
   beforeEach(() => {
     repository = new InMemoryCteDocumentsRepository();
-    service = new CteDocumentsService(repository);
+    service = new CteDocumentsService(repository, emissor());
   });
 
   it('salva o CT-e lido do XML', async () => {
@@ -150,5 +178,53 @@ describe('CteDocumentsService', () => {
     await service.remover(CHAVE);
 
     expect(await service.listar({})).toHaveLength(0);
+  });
+});
+
+describe('resolverEmitenteDacte', () => {
+  const documento = (over: Partial<Parameters<typeof resolverEmitenteDacte>[0]> = {}) => ({
+    cnpjEmitente: '08789863000100',
+    rntrc: null,
+    uf: 'SP',
+    ...over,
+  });
+
+  it('usa os dados reais da empresa quando o CT-e é nosso e o XML não trouxe o emitente completo', () => {
+    const emitente = resolverEmitenteDacte(documento(), null, null, emissor().emitente);
+
+    expect(emitente.nome).toBe('J M DE OLIVEIRA - CARGAS - ME');
+    expect(emitente.municipio).toBe('Osasco');
+    expect(emitente.uf).toBe('SP');
+    expect(emitente.ie).toBe('125767078113');
+    expect(emitente.telefone).toBe('(35) 99201-3225');
+    expect(emitente.logradouro).toBe('Rua gilson nardoni rodrigues 9');
+  });
+
+  it('não inventa endereço quando o CT-e é de outro emitente', () => {
+    const emitente = resolverEmitenteDacte(
+      documento({ cnpjEmitente: '99988877000166', uf: 'RJ' }),
+      null,
+      null,
+      emissor().emitente,
+    );
+
+    expect(emitente.nome).toBe('EMITENTE');
+    expect(emitente.municipio).toBe('');
+    expect(emitente.uf).toBe('RJ');
+    expect(emitente.ie).toBe('ISENTO');
+  });
+
+  it('prefere o XML quando disponível, mesmo sendo nosso emitente', () => {
+    const emitente = resolverEmitenteDacte(
+      documento(),
+      { ...importado(), emitente: { cnpjCpf: '08789863000100', nome: 'Nome do XML' } },
+      { ie: '999', telefone: '', logradouro: '', bairro: '', cep: '', municipio: 'OUTRA CIDADE', uf: 'MG', crt: '2' },
+      emissor().emitente,
+    );
+
+    expect(emitente.nome).toBe('Nome do XML');
+    expect(emitente.municipio).toBe('OUTRA CIDADE');
+    expect(emitente.uf).toBe('MG');
+    expect(emitente.crt).toBe('2');
   });
 });
