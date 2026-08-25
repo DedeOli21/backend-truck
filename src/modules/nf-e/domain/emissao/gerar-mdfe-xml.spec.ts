@@ -38,6 +38,12 @@ const dados = (): DadosMdfe => ({
     '35260808789863000100570010000011481000000002',
   ],
   totais: { valorCarga: 39587.01, pesoBrutoKg: 1397.55 },
+  seguro: {
+    responsavel: 1,
+    seguradoraNome: 'Seguradora Exemplo',
+    seguradoraCnpj: '11222333000181',
+    apolice: '000123456',
+  },
 });
 
 describe('gerarMdfeXml', () => {
@@ -68,6 +74,9 @@ describe('gerarMdfeXml', () => {
     expect(xml).toContain('<vCarga>39587.01</vCarga>');
     expect(xml).toContain('<UFIni>SP</UFIni>');
     expect(xml).toContain('<UFFim>MG</UFFim>');
+    expect(xml).toContain('<xSeg>Seguradora Exemplo</xSeg>');
+    expect(xml).toContain('<CNPJ>11222333000181</CNPJ>');
+    expect(xml).toContain('<nApol>000123456</nApol>');
   });
 
   it('inclui infPercurso quando a viagem passa por UF intermediária', () => {

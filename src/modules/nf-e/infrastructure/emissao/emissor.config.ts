@@ -7,6 +7,8 @@ export interface EmissorConfig {
   serie: number;
   codigoMunicipioPadrao: string;
   emitente: ParticipanteCte & { inscricaoEstadual: string; crt: 1 | 2 | 3; rntrc?: string | null };
+  /** Seguro da carga: obrigatório na emissão de MDF-e. */
+  seguro: { seguradoraNome: string; seguradoraCnpj: string; apolice: string };
 }
 
 /**
@@ -32,6 +34,14 @@ export const lerEmissorConfig = (env: NodeJS.ProcessEnv = process.env): EmissorC
       cep: env.CTE_EMIT_CEP ?? '',
       uf: env.CTE_EMIT_UF ?? 'SP',
     },
+  },
+  seguro: {
+    // Sem seguradora contratada configurada, a emissão de MDF-e em produção
+    // (ambiente 1) fica bloqueada nos campos abaixo — homologação aceita
+    // qualquer CNPJ/apólice, sem valor fiscal.
+    seguradoraNome: env.MDFE_SEGURADORA_NOME ?? '',
+    seguradoraCnpj: env.MDFE_SEGURADORA_CNPJ ?? '',
+    apolice: env.MDFE_APOLICE_NUMERO ?? '',
   },
 });
 

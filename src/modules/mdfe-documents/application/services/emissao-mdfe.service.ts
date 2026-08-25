@@ -84,6 +84,15 @@ export class EmissaoMdfeService {
       throw new BadRequestException('Selecione ao menos um CT-e da viagem.');
     }
 
+    if (
+      this.emissor.ambiente === 1 &&
+      (!this.emissor.seguro.seguradoraCnpj || !this.emissor.seguro.apolice)
+    ) {
+      throw new ServiceUnavailableException(
+        'Emissão em produção indisponível: configure a seguradora da carga (MDFE_SEGURADORA_NOME, MDFE_SEGURADORA_CNPJ, MDFE_APOLICE_NUMERO).',
+      );
+    }
+
     const ctes = await Promise.all(
       dto.cteChaves.map((chave) => this.cteDocumentos.buscarPorChave(chave, ownerUserId)),
     );
@@ -128,6 +137,12 @@ export class EmissaoMdfeService {
       condutor: { nome: driver.fullName, cpf: driver.cpf },
       cteChaves: dto.cteChaves,
       totais: { valorCarga, pesoBrutoKg },
+      seguro: {
+        responsavel: 1,
+        seguradoraNome: this.emissor.seguro.seguradoraNome || 'SEM SEGURADORA CONTRATADA',
+        seguradoraCnpj: this.emissor.seguro.seguradoraCnpj || '00000000000000',
+        apolice: this.emissor.seguro.apolice || '000000000',
+      },
     };
 
     const { xml, chave, id } = gerarMdfeXml(dados);

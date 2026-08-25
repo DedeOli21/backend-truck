@@ -28,6 +28,7 @@ const emissor = (): EmissorConfig => ({
       uf: 'SP',
     },
   },
+  seguro: { seguradoraNome: '', seguradoraCnpj: '', apolice: '' },
 });
 
 /** O envelope leva o CT-e comprimido; para conferir o conteúdo é preciso abrir. */

@@ -24,6 +24,15 @@ export interface CondutorMdfe {
   cpf: string;
 }
 
+/** Seguro da carga: obrigatório para o modal rodoviário. */
+export interface SeguroMdfe {
+  /** 1 = emitente do MDF-e é o responsável pelo seguro. */
+  responsavel: 1 | 2 | 3 | 4;
+  seguradoraNome: string;
+  seguradoraCnpj: string;
+  apolice: string;
+}
+
 export interface DadosMdfe {
   ambiente: 1 | 2;
   serie: number;
@@ -41,6 +50,7 @@ export interface DadosMdfe {
   condutor: CondutorMdfe;
   cteChaves: string[];
   totais: { valorCarga: number; pesoBrutoKg: number };
+  seguro: SeguroMdfe;
 }
 
 export interface MdfeGerado {
@@ -171,6 +181,16 @@ export const gerarMdfeXml = (dados: DadosMdfe): MdfeGerado => {
     `</rodo>` +
     `</infModal>`;
 
+  const seg =
+    `<seg>` +
+    `<infResp><respSeg>${dados.seguro.responsavel}</respSeg></infResp>` +
+    `<infSeg>` +
+    `<xSeg>${escapar(dados.seguro.seguradoraNome)}</xSeg>` +
+    `<CNPJ>${somenteDigitos(dados.seguro.seguradoraCnpj)}</CNPJ>` +
+    `</infSeg>` +
+    `<nApol>${escapar(dados.seguro.apolice)}</nApol>` +
+    `</seg>`;
+
   const chCteXml = dados.cteChaves
     .map((chave) => `<infCTe><chCTe>${chave}</chCTe></infCTe>`)
     .join('');
@@ -200,6 +220,7 @@ export const gerarMdfeXml = (dados: DadosMdfe): MdfeGerado => {
     ide +
     emit +
     infModal +
+    seg +
     infDoc +
     tot +
     `</infMDFe>` +

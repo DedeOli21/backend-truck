@@ -63,6 +63,11 @@ const emissor = () => ({
       uf: 'SP',
     },
   },
+  seguro: {
+    seguradoraNome: 'Seguradora Exemplo',
+    seguradoraCnpj: '11222333000181',
+    apolice: '000123456',
+  },
 });
 
 const dto = (): EmitirMdfeDto => ({
